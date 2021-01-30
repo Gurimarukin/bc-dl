@@ -1,0 +1,9 @@
+{
+  "name": "bc-dl",
+  "version": "0.1.0",
+  "description": "youtube-dl for Bandcamp, with mp3 tags",
+  "main": "lib/index.js",
+  "repository": "https://github.com/Gurimarukin/bc-dl.git",
+  "author": "Gurimarukin",
+  "license": "MIT"
+}
