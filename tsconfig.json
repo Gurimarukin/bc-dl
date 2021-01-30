@@ -1,0 +1,12 @@
+{
+  "extends": "@type-config/strict",
+  "compilerOptions": {
+    "outDir": "./lib",
+    "incremental": true,
+    "noEmit": true,
+    "sourceMap": false,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false
+  },
+  "include": ["./src", "./test"]
+}
