@@ -2,7 +2,7 @@ import path from 'path'
 
 import { flow, pipe } from 'fp-ts/function'
 
-import { ExecYoutubeDl, HttpGet, bcDl, getMetadata, getMp3Tags } from '../../src/features/bcDl'
+import { ExecYoutubeDl, HttpGet, bcDl, getMetadata } from '../../src/features/bcDl'
 import { AlbumMetadata } from '../../src/models/AlbumMetadata'
 import { Future, List } from '../../src/utils/fp'
 import { FsUtils } from '../../src/utils/FsUtils'
@@ -32,44 +32,6 @@ describe('bcDl', () => {
           ],
         }
         expect(result).toStrictEqual(expected)
-      }),
-      Future.runUnsafe,
-    ))
-
-  it('should get tags', () =>
-    pipe(
-      getMp3Tags(mp3Dir),
-      Future.map(result => {
-        expect(result).toStrictEqual([
-          {
-            file: { name: path.join(mp3Dir, 'Inlustris - Ave Gloriosa.mp3') },
-            tags: { raw: {} },
-          },
-          {
-            file: { name: path.join(mp3Dir, 'Inlustris - Como Somos Per Consello CSM 119.mp3') },
-            tags: { raw: {} },
-          },
-          {
-            file: { name: path.join(mp3Dir, 'Inlustris - Ecco La Primavera.mp3') },
-            tags: { raw: {} },
-          },
-          {
-            file: { name: path.join(mp3Dir, 'Inlustris - Gaudens In Domino.mp3') },
-            tags: { raw: {} },
-          },
-          {
-            file: { name: path.join(mp3Dir, 'Inlustris - Morena Me Llaman.mp3') },
-            tags: { raw: {} },
-          },
-          {
-            file: { name: path.join(mp3Dir, 'Inlustris - Santa Maria, Strela Do Dia CSM 100.mp3') },
-            tags: { raw: {} },
-          },
-          {
-            file: { name: path.join(mp3Dir, 'Inlustris - Stella Splendens.mp3') },
-            tags: { raw: {} },
-          },
-        ])
       }),
       Future.runUnsafe,
     ))

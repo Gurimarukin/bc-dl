@@ -1,7 +1,7 @@
 import { not, pipe } from 'fp-ts/function'
 import { DOMWindow, JSDOM } from 'jsdom'
 
-import { Either, Maybe } from './fp'
+import { Either } from './fp'
 import { s } from './StringUtils'
 
 const { window } = new JSDOM()
@@ -47,8 +47,7 @@ export namespace DOMUtils {
       Either.chain(elt =>
         pipe(
           elt.textContent?.trim().replace(whitespaceRegex, ' '),
-          Maybe.fromNullable,
-          Either.fromOption(() => s`No textContent for element: ${selector}`),
+          Either.fromNullable(s`No textContent for element: ${selector}`),
         ),
       ),
       Either.filterOrElse(

@@ -5,13 +5,12 @@ import { Command, Opts } from 'decline-ts'
 import { apply } from 'fp-ts'
 import { flow, pipe } from 'fp-ts/function'
 import { JSDOM } from 'jsdom'
-import NodeID3 from 'node-id3'
 
 import { AlbumMetadata } from '../models/AlbumMetadata'
-import { Either, Future, List, todo } from '../utils/fp'
+import { Validation } from '../models/Validation'
+import { Either, Future, List, NonEmptyArray, todo } from '../utils/fp'
 import { FsUtils } from '../utils/FsUtils'
 import { StringUtils, s } from '../utils/StringUtils'
-import { TagsUtils } from '../utils/TagsUtils'
 
 const musicLibraryDirMetavar = 'music library dir'
 
@@ -39,8 +38,11 @@ export const bcDl = (
     Future.bind('initialCwd', () => Future.fromIOEither(FsUtils.cwd())),
     Future.do(({ albumDir }) => Future.fromIOEither(FsUtils.chdir(albumDir))),
     Future.do(({ url }) => execYoutubeDl(url)),
-    Future.bind('mp3tags', ({ albumDir }) => getMp3Tags(albumDir)),
-    Future.map(() => todo()),
+    Future.bind('mp3files', ({ albumDir }) => getMp3Files(albumDir)),
+    Future.map(({ mp3files }) => {
+      console.log('mp3files =', mp3files)
+      return todo()
+    }),
   )
 
 const parseCommand = (argv: List<string>): Future<Command.TypeOf<typeof cmd>> =>
@@ -73,28 +75,27 @@ const ensureAlbumDirectory = (musicLibraryDir: string, metadata: AlbumMetadata):
   )
 }
 
-type FileWithTags = {
-  readonly file: {
-    readonly name: string
-  }
-  readonly tags: NodeID3.Tags
-}
-
-export const getMp3Tags = (albumDir: string): Future<List<FileWithTags>> =>
+export const getMp3Files = (albumDir: string): Future<NonEmptyArray<string>> =>
   pipe(
     FsUtils.readdir(albumDir),
     Future.chain(
       flow(
-        List.map(f => {
-          const file: FileWithTags['file'] = { name: path.join(albumDir, f.name) }
+        NonEmptyArray.fromReadonlyArray,
+        Future.fromOption(() => Error(s`Empty directory after youtube-dl: ${albumDir}`)),
+      ),
+    ),
+    Future.chain(
+      flow(
+        NonEmptyArray.traverse(Validation.applicativeValidation)(f => {
+          const fName = path.join(albumDir, f.name)
           return f.isDirectory()
-            ? Future.left(Error(s`Unexpected directory: ${file.name}`))
-            : pipe(
-                TagsUtils.read(file.name),
-                Future.map(tags => ({ file, tags })),
-              )
+            ? Either.left(NonEmptyArray.of(s`Unexpected directory: ${fName}`))
+            : Either.right(fName)
         }),
-        Future.sequenceArray,
+        Either.mapLeft(e =>
+          Error(s`Error while listing mp3 files:\n${pipe(e, StringUtils.mkString('\n'))}`),
+        ),
+        Future.fromEither,
       ),
     ),
   )

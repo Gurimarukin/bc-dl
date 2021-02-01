@@ -6,24 +6,19 @@ import { DOMUtils } from '../utils/DOMUtils'
 import { Either, List, Maybe, NonEmptyArray } from '../utils/fp'
 import { numberFromString } from '../utils/ioTsTypes'
 import { StringUtils, s } from '../utils/StringUtils'
+import { Validation } from './Validation'
 
 export type AlbumMetadata = {
   readonly artist: string
   readonly album: string
   readonly year: number
   readonly isEp: boolean
-  readonly tracks: NonEmptyArray<Track>
+  readonly tracks: List<Track>
 }
 
 type Track = {
   readonly number: number
   readonly title: string
-}
-
-type Validation<A> = Either<NonEmptyArray<string>, A>
-const Validation = {
-  validation: Either.getValidation(NonEmptyArray.getSemigroup<string>()),
-  applicativeValidation: Either.getApplicativeValidation(NonEmptyArray.getSemigroup<string>()),
 }
 
 export namespace AlbumMetadata {
