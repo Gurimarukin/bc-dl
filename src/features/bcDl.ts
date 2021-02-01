@@ -15,10 +15,14 @@ import { StringUtils, s } from '../utils/StringUtils'
 const musicLibraryDirMetavar = 'music library dir'
 
 const cmd = Command({ name: 'bc-dl', header: 'youtube-dl for Bandcamp, with mp3 tags' })(
-  apply.sequenceS(Opts.opts)({
-    url: Opts.argument()('url'),
-    musicLibraryDir: Opts.argument()(musicLibraryDirMetavar),
-  }),
+  pipe(
+    apply.sequenceT(Opts.opts)(
+      Opts.argument()(musicLibraryDirMetavar),
+      Opts.argument()('url'),
+      Opts.argument()('genre'),
+    ),
+    Opts.map(([musicLibraryDir, url, genre]) => ({ musicLibraryDir, url, genre })),
+  ),
 )
 
 export type HttpGet = (url: string) => Future<AxiosResponse<string>>
@@ -30,14 +34,15 @@ export const bcDl = (
   execYoutubeDl: ExecYoutubeDl,
 ): Future<void> =>
   pipe(
-    parseCommand(argv),
-    Future.bind('metadata', ({ url }) => getMetadata(httpGet)(url)),
-    Future.bind('albumDir', ({ musicLibraryDir, metadata }) =>
-      ensureAlbumDirectory(musicLibraryDir, metadata),
+    Future.Do,
+    Future.bind('args', () => parseCommand(argv)),
+    Future.bind('metadata', ({ args }) => getMetadata(httpGet)(args.url)),
+    Future.bind('albumDir', ({ args, metadata }) =>
+      ensureAlbumDirectory(args.musicLibraryDir, metadata),
     ),
     Future.bind('initialCwd', () => Future.fromIOEither(FsUtils.cwd())),
     Future.do(({ albumDir }) => Future.fromIOEither(FsUtils.chdir(albumDir))),
-    Future.do(({ url }) => execYoutubeDl(url)),
+    Future.do(({ args }) => execYoutubeDl(args.url)),
     Future.bind('mp3files', ({ albumDir }) => getMp3Files(albumDir)),
     Future.map(({ mp3files }) => {
       console.log('mp3files =', mp3files)
@@ -70,7 +75,13 @@ const ensureAlbumDirectory = (musicLibraryDir: string, metadata: AlbumMetadata):
     s`[${metadata.year}] ${metadata.album}${metadata.isEp ? ' (EP)' : ''}`,
   )
   return pipe(
-    FsUtils.mkdir(albumDir, { recursive: true }),
+    FsUtils.exists(albumDir),
+    Future.fromIOEither,
+    Future.chain(dirExists =>
+      dirExists
+        ? Future.left(Error(s`Album directory already exists, this might be an error: ${albumDir}`))
+        : FsUtils.mkdir(albumDir, { recursive: true }),
+    ),
     Future.map(() => albumDir),
   )
 }

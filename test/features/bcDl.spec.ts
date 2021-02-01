@@ -44,7 +44,7 @@ describe('bcDl (e2e)', () => {
   it('should e2e', () =>
     pipe(
       bcDl(
-        ['https://inlustris.bandcamp.com/album/stella-splendens', musicDir],
+        [musicDir, 'https://inlustris.bandcamp.com/album/stella-splendens', 'Dungeon Synth'],
         httpGetMocked,
         execYoutubeDlMocked,
       ),
