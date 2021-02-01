@@ -62,7 +62,16 @@ module.exports = {
     'functional/no-conditional-statement': 'off', // switch aren't bad :/
     'functional/no-expression-statement': [
       'error',
-      { ignorePattern: ['^console\\.', '^describe\\(', '^it\\(', '^expect\\('] },
+      {
+        ignorePattern: [
+          '^afterEach\\(',
+          '^beforeEach\\(',
+          '^console\\.',
+          '^describe\\(',
+          '^expect\\(',
+          '^it\\(',
+        ],
+      },
     ],
     'functional/no-mixed-type': 'off',
     'functional/no-promise-reject': 'error',

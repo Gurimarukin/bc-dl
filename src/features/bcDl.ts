@@ -3,13 +3,15 @@ import path from 'path'
 import { AxiosResponse } from 'axios'
 import { Command, Opts } from 'decline-ts'
 import { apply } from 'fp-ts'
-import { pipe } from 'fp-ts/function'
+import { flow, pipe } from 'fp-ts/function'
 import { JSDOM } from 'jsdom'
+import NodeID3 from 'node-id3'
 
 import { AlbumMetadata } from '../models/AlbumMetadata'
 import { Either, Future, List, todo } from '../utils/fp'
 import { FsUtils } from '../utils/FsUtils'
 import { StringUtils, s } from '../utils/StringUtils'
+import { TagsUtils } from '../utils/TagsUtils'
 
 const musicLibraryDirMetavar = 'music library dir'
 
@@ -37,6 +39,7 @@ export const bcDl = (
     Future.bind('initialCwd', () => Future.fromIOEither(FsUtils.cwd())),
     Future.do(({ albumDir }) => Future.fromIOEither(FsUtils.chdir(albumDir))),
     Future.do(({ url }) => execYoutubeDl(url)),
+    Future.bind('mp3tags', ({ albumDir }) => getMp3Tags(albumDir)),
     Future.map(() => todo()),
   )
 
@@ -69,3 +72,29 @@ const ensureAlbumDirectory = (musicLibraryDir: string, metadata: AlbumMetadata):
     Future.map(() => albumDir),
   )
 }
+
+type FileWithTags = {
+  readonly file: {
+    readonly name: string
+  }
+  readonly tags: NodeID3.Tags
+}
+
+export const getMp3Tags = (albumDir: string): Future<List<FileWithTags>> =>
+  pipe(
+    FsUtils.readdir(albumDir),
+    Future.chain(
+      flow(
+        List.map(f => {
+          const file: FileWithTags['file'] = { name: path.join(albumDir, f.name) }
+          return f.isDirectory()
+            ? Future.left(Error(s`Unexpected directory: ${file.name}`))
+            : pipe(
+                TagsUtils.read(file.name),
+                Future.map(tags => ({ file, tags })),
+              )
+        }),
+        Future.sequenceArray,
+      ),
+    ),
+  )

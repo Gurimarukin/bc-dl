@@ -2,12 +2,13 @@ import path from 'path'
 
 import { flow, pipe } from 'fp-ts/function'
 
-import { ExecYoutubeDl, HttpGet, bcDl, getMetadata } from '../../src/features/bcDl'
+import { ExecYoutubeDl, HttpGet, bcDl, getMetadata, getMp3Tags } from '../../src/features/bcDl'
 import { Future, List } from '../../src/utils/fp'
 import { FsUtils } from '../../src/utils/FsUtils'
 import { s } from '../../src/utils/StringUtils'
 
 const musicDir = path.resolve(__dirname, '../music')
+const mp3Dir = path.resolve(__dirname, '../resources/mp3')
 
 describe('bcDl', () => {
   it('should get metadata', () =>
@@ -24,15 +25,55 @@ describe('bcDl', () => {
       Future.runUnsafe,
     ))
 
+  it('should get tags', () =>
+    pipe(
+      getMp3Tags(mp3Dir),
+      Future.map(result => {
+        expect(result).toStrictEqual([
+          {
+            file: { name: path.join(mp3Dir, 'Inlustris - Ave Gloriosa.mp3') },
+            tags: { raw: {} },
+          },
+          {
+            file: { name: path.join(mp3Dir, 'Inlustris - Como Somos Per Consello CSM 119.mp3') },
+            tags: { raw: {} },
+          },
+          {
+            file: { name: path.join(mp3Dir, 'Inlustris - Ecco La Primavera.mp3') },
+            tags: { raw: {} },
+          },
+          {
+            file: { name: path.join(mp3Dir, 'Inlustris - Gaudens In Domino.mp3') },
+            tags: { raw: {} },
+          },
+          {
+            file: { name: path.join(mp3Dir, 'Inlustris - Morena Me Llaman.mp3') },
+            tags: { raw: {} },
+          },
+          {
+            file: { name: path.join(mp3Dir, 'Inlustris - Santa Maria, Strela Do Dia CSM 100.mp3') },
+            tags: { raw: {} },
+          },
+          {
+            file: { name: path.join(mp3Dir, 'Inlustris - Stella Splendens.mp3') },
+            tags: { raw: {} },
+          },
+        ])
+      }),
+      Future.runUnsafe,
+    ))
+})
+
+describe('bcDl (e2e)', () => {
+  beforeEach(() => pipe(cleanMusicDir(), Future.runUnsafe))
+  afterEach(() => pipe(cleanMusicDir(), Future.runUnsafe))
+
   it('should e2e', () =>
     pipe(
-      setup(),
-      Future.chain(() =>
-        bcDl(
-          ['https://inlustris.bandcamp.com/album/stella-splendens', musicDir],
-          httpGetMocked,
-          execYoutubeDlMocked,
-        ),
+      bcDl(
+        ['https://inlustris.bandcamp.com/album/stella-splendens', musicDir],
+        httpGetMocked,
+        execYoutubeDlMocked,
       ),
       Future.map(result => {
         expect(result).toStrictEqual(3)
@@ -41,7 +82,7 @@ describe('bcDl', () => {
     ))
 })
 
-const setup = (): Future<void> =>
+const cleanMusicDir = (): Future<void> =>
   pipe(
     FsUtils.readdir(musicDir),
     Future.chain(
@@ -51,7 +92,7 @@ const setup = (): Future<void> =>
             ? FsUtils.rmdir(path.join(musicDir, f.name), { recursive: true })
             : Future.unit,
         ),
-        Future.sequenceSeqArray,
+        Future.sequenceArray,
       ),
     ),
     Future.map(() => {}),
@@ -69,7 +110,6 @@ const httpGetMocked: HttpGet = url => {
 
 const execYoutubeDlMocked: ExecYoutubeDl = url => {
   if (url === 'https://inlustris.bandcamp.com/album/stella-splendens') {
-    const mp3Dir = path.resolve(__dirname, '../resources/mp3')
     return pipe(
       FsUtils.readdir(mp3Dir),
       Future.chain(
@@ -80,7 +120,7 @@ const execYoutubeDlMocked: ExecYoutubeDl = url => {
               ? Future.left(Error(s`Unexpected directory: ${fName}`))
               : FsUtils.copyFile(fName, f.name)
           }),
-          Future.sequenceSeqArray,
+          Future.sequenceArray,
         ),
       ),
       Future.map(() => {}),
