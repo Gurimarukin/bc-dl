@@ -56,7 +56,10 @@ export const List = {
 }
 
 export type Tuple<A, B> = readonly [A, B]
-export const Tuple = readonlyTuple
+export const Tuple = {
+  ...readonlyTuple,
+  of: <A, B>(a: A, b: B): Tuple<A, B> => [a, b],
+}
 
 const unknownAsError = (e: unknown): Error => e as Error
 

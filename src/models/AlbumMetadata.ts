@@ -12,17 +12,19 @@ export type AlbumMetadata = {
   readonly artist: string
   readonly album: string
   readonly year: number
+  readonly genre: string
   readonly isEp: boolean
-  readonly tracks: List<Track>
-}
-
-type Track = {
-  readonly number: number
-  readonly title: string
+  readonly tracks: NonEmptyArray<AlbumMetadata.Track>
+  readonly coverUrl: string
 }
 
 export namespace AlbumMetadata {
-  export const fromDocument = (
+  export type Track = {
+    readonly number: number
+    readonly title: string
+  }
+
+  export const fromDocument = (genre: string) => (
     document: DOMUtils.Document,
   ): Either<NonEmptyArray<string>, AlbumMetadata> => {
     const eitherArtist = lift('artist')(DOMUtils.parseText(document, '#name-section a'))
@@ -33,8 +35,17 @@ export namespace AlbumMetadata {
         parseYear(document),
         parseIsEp(eitherArtist),
         parseTracks(document),
+        parseCoverUrl(document),
       ),
-      Either.map(([artist, album, year, isEp, tracks]) => ({ artist, album, year, isEp, tracks })),
+      Either.map(([artist, album, year, isEp, tracks, coverUrl]) => ({
+        artist,
+        album,
+        year,
+        genre,
+        isEp,
+        tracks,
+        coverUrl,
+      })),
     )
   }
 
@@ -98,6 +109,20 @@ export namespace AlbumMetadata {
         ),
       }),
     )
+
+  const parseCoverUrl = (document: DOMUtils.Document): Validation<string> =>
+    pipe(
+      document,
+      DOMUtils.querySelectorEnsureOne('#tralbumArt img', DOMUtils.HTMLImageElement),
+      Either.map(e => e.src),
+      Either.filterOrElse(isJpg, src => s`Expected cover to be a jpg: ${src}`),
+      lift('coverUrl'),
+    )
+  const jpgStrings = ['.jpg', '.jpeg']
+  const isJpg = (src: string): boolean => {
+    const srcLower = src.toLowerCase()
+    return jpgStrings.some(ext => srcLower.endsWith(ext))
+  }
 
   const lift = (name: string) => <A>(e: Either<string, A>): Validation<A> =>
     pipe(

@@ -3,7 +3,10 @@ import { pipe } from 'fp-ts/function'
 import { List, Maybe } from './fp'
 
 // interpolates.length is always strings.length - 1
-export const s = (strings: TemplateStringsArray, ...interpolates: List<string | number>): string =>
+export const s = (
+  strings: TemplateStringsArray,
+  ...interpolates: List<string | number | boolean>
+): string =>
   pipe(
     strings,
     List.zip(List.snoc(interpolates, '')),

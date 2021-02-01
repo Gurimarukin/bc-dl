@@ -15,7 +15,13 @@ export namespace DOMUtils {
   export type Document = DOMWindow['Document']['prototype']
   export type Element = DOMWindow['Element']['prototype']
   export type ParentNode = DOMWindow['ParentNode']['prototype']
-  export const { HTMLAnchorElement, HTMLDivElement, HTMLElement, HTMLHeadingElement } = window
+  export const {
+    HTMLAnchorElement,
+    HTMLDivElement,
+    HTMLElement,
+    HTMLHeadingElement,
+    HTMLImageElement,
+  } = window
 
   export function querySelectorEnsureOne(
     selector: string,

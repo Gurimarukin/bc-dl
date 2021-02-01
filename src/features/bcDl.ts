@@ -8,9 +8,16 @@ import { JSDOM } from 'jsdom'
 
 import { AlbumMetadata } from '../models/AlbumMetadata'
 import { Validation } from '../models/Validation'
-import { Either, Future, List, NonEmptyArray, todo } from '../utils/fp'
+import { Either, Future, List, Maybe, NonEmptyArray, Tuple } from '../utils/fp'
 import { FsUtils } from '../utils/FsUtils'
 import { StringUtils, s } from '../utils/StringUtils'
+import { TagsUtils } from '../utils/TagsUtils'
+
+export type HttpGet = (url: string) => Future<AxiosResponse<string>>
+export type HttpGetBuffer = (url: string) => Future<AxiosResponse<Buffer>>
+export type ExecYoutubeDl = (url: string) => Future<void>
+
+type FileWithTrack = Tuple<string, AlbumMetadata.Track>
 
 const musicLibraryDirMetavar = 'music library dir'
 
@@ -25,18 +32,16 @@ const cmd = Command({ name: 'bc-dl', header: 'youtube-dl for Bandcamp, with mp3 
   ),
 )
 
-export type HttpGet = (url: string) => Future<AxiosResponse<string>>
-export type ExecYoutubeDl = (url: string) => Future<void>
-
 export const bcDl = (
   argv: List<string>,
   httpGet: HttpGet,
+  httpGetBuffer: HttpGetBuffer,
   execYoutubeDl: ExecYoutubeDl,
 ): Future<void> =>
   pipe(
     Future.Do,
     Future.bind('args', () => parseCommand(argv)),
-    Future.bind('metadata', ({ args }) => getMetadata(httpGet)(args.url)),
+    Future.bind('metadata', ({ args }) => getMetadata(httpGet)(args)),
     Future.bind('albumDir', ({ args, metadata }) =>
       ensureAlbumDirectory(args.musicLibraryDir, metadata),
     ),
@@ -44,24 +49,25 @@ export const bcDl = (
     Future.do(({ albumDir }) => Future.fromIOEither(FsUtils.chdir(albumDir))),
     Future.do(({ args }) => execYoutubeDl(args.url)),
     Future.bind('mp3files', ({ albumDir }) => getMp3Files(albumDir)),
-    Future.map(({ mp3files }) => {
-      console.log('mp3files =', mp3files)
-      return todo()
-    }),
+    Future.bind('cover', ({ metadata }) => downloadCover(httpGetBuffer)(metadata.coverUrl)),
+    Future.chain(({ mp3files, metadata, cover }) => writeMp3TagsToFiles(mp3files, metadata, cover)),
   )
 
 const parseCommand = (argv: List<string>): Future<Command.TypeOf<typeof cmd>> =>
   pipe(cmd, Command.parse(argv), Either.mapLeft(Error), Future.fromEither)
 
-export const getMetadata = (httpGet: HttpGet) => (url: string): Future<AlbumMetadata> =>
+export const getMetadata = (httpGet: HttpGet) => ({
+  url,
+  genre,
+}: Command.TypeOf<typeof cmd>): Future<AlbumMetadata> =>
   pipe(
     httpGet(url),
     Future.chain(({ data }) =>
       pipe(
         new JSDOM(data).window.document,
-        AlbumMetadata.fromDocument,
+        AlbumMetadata.fromDocument(genre),
         Either.mapLeft(e =>
-          Error(s`Error while parsing AlbumMetadata:\n${pipe(e, StringUtils.mkString('\n'))}`),
+          Error(s`Errors while parsing AlbumMetadata:\n${pipe(e, StringUtils.mkString('\n'))}`),
         ),
         Future.fromEither,
       ),
@@ -86,7 +92,48 @@ const ensureAlbumDirectory = (musicLibraryDir: string, metadata: AlbumMetadata):
   )
 }
 
-export const getMp3Files = (albumDir: string): Future<NonEmptyArray<string>> =>
+const downloadCover = (httpGetBuffer: HttpGetBuffer) => (coverUrl: string): Future<Buffer> =>
+  pipe(
+    httpGetBuffer(coverUrl),
+    Future.map(res => res.data),
+  )
+
+const writeMp3TagsToFiles = (
+  mp3Files: NonEmptyArray<string>,
+  metadata: AlbumMetadata,
+  cover: Buffer,
+): Future<void> =>
+  pipe(
+    zipMp3FilesWithMetadata(mp3Files, metadata.tracks),
+    Future.chain(flow(List.map(writeMp3TagsToFile(metadata, cover)), Future.sequenceArray)),
+    Future.map(() => {}),
+  )
+
+const writeMp3TagsToFile = (metadata: AlbumMetadata, cover: Buffer) => ([
+  file,
+  track,
+]: FileWithTrack): Future<void> =>
+  TagsUtils.write(
+    {
+      title: track.title,
+      artist: metadata.artist,
+      album: metadata.album,
+      year: s`${metadata.year}`,
+      trackNumber: s`${track.number}`,
+      genre: metadata.genre,
+      // comment: { language: '', text: '' },
+      performerInfo: metadata.artist,
+      image: {
+        mime: 'jpeg',
+        type: { id: 3, name: 'front cover' },
+        description: '',
+        imageBuffer: cover,
+      },
+    },
+    file,
+  )
+
+const getMp3Files = (albumDir: string): Future<NonEmptyArray<string>> =>
   pipe(
     FsUtils.readdir(albumDir),
     Future.chain(
@@ -99,14 +146,47 @@ export const getMp3Files = (albumDir: string): Future<NonEmptyArray<string>> =>
       flow(
         NonEmptyArray.traverse(Validation.applicativeValidation)(f => {
           const fName = path.join(albumDir, f.name)
-          return f.isDirectory()
-            ? Either.left(NonEmptyArray.of(s`Unexpected directory: ${fName}`))
-            : Either.right(fName)
+          if (f.isDirectory()) {
+            return Either.left(NonEmptyArray.of(s`Unexpected directory: ${fName}`))
+          }
+          if (!fName.endsWith('.mp3')) {
+            return Either.left(NonEmptyArray.of(s`Non mp3 file: ${fName}`))
+          }
+          return Either.right(fName)
         }),
         Either.mapLeft(e =>
-          Error(s`Error while listing mp3 files:\n${pipe(e, StringUtils.mkString('\n'))}`),
+          Error(s`Errors while listing mp3 files:\n${pipe(e, StringUtils.mkString('\n'))}`),
         ),
         Future.fromEither,
       ),
     ),
   )
+
+const zipMp3FilesWithMetadata = (
+  mp3Files: NonEmptyArray<string>,
+  tracks: NonEmptyArray<AlbumMetadata.Track>,
+): Future<NonEmptyArray<Tuple<string, AlbumMetadata.Track>>> =>
+  pipe(
+    mp3Files,
+    NonEmptyArray.traverse(Validation.applicativeValidation)(file => {
+      const fileBasename = path.basename(file)
+      return pipe(
+        tracks,
+        List.findFirst(trackMatchesFile(fileBasename.toLowerCase())),
+        Maybe.fold(
+          () =>
+            Either.left(
+              NonEmptyArray.of(s`Couldn't find track metadata matching file: ${fileBasename}`),
+            ),
+          track => Either.right(Tuple.of(file, track)),
+        ),
+      )
+    }),
+    Either.mapLeft(e =>
+      Error(s`Errors while zipping files with tracks:\n${pipe(e, StringUtils.mkString('\n'))}`),
+    ),
+    Future.fromEither,
+  )
+
+const trackMatchesFile = (fileBasenameLower: string) => (track: AlbumMetadata.Track): boolean =>
+  fileBasenameLower.includes(track.title.toLowerCase())
