@@ -1,6 +1,7 @@
+import { not, pipe } from 'fp-ts/function'
 import { DOMWindow, JSDOM } from 'jsdom'
 
-import { Either } from './fp'
+import { Either, Maybe } from './fp'
 import { s } from './StringUtils'
 
 const { window } = new JSDOM()
@@ -13,18 +14,19 @@ export namespace DOMUtils {
 
   export type Document = DOMWindow['Document']['prototype']
   export type Element = DOMWindow['Element']['prototype']
-  export const { HTMLAnchorElement, HTMLDivElement, HTMLHeadingElement } = window
+  export type ParentNode = DOMWindow['ParentNode']['prototype']
+  export const { HTMLAnchorElement, HTMLDivElement, HTMLElement, HTMLHeadingElement } = window
 
   export function querySelectorEnsureOne(
     selector: string,
-  ): (document: Document) => Either<string, Element>
+  ): (parent: ParentNode) => Either<string, Element>
   export function querySelectorEnsureOne<E>(
     selector: string,
     type: Constructor<E>,
-  ): (document: Document) => Either<string, E>
+  ): (parent: ParentNode) => Either<string, E>
   export function querySelectorEnsureOne<E>(selector: string, type?: Constructor<E>) {
-    return (document: Document): Either<string, Element | E> => {
-      const res = document.querySelectorAll(selector)
+    return (parent: ParentNode): Either<string, Element | E> => {
+      const res = parent.querySelectorAll(selector)
       const elt = res[0]
 
       if (elt === undefined) return Either.left(s`No element matches selector: ${selector}`)
@@ -36,4 +38,23 @@ export namespace DOMUtils {
       return Either.left(s`Element don't have expected type: ${type.name}`)
     }
   }
+
+  const whitespaceRegex = /\s+/g
+  export const parseText = (parent: ParentNode, selector: string): Either<string, string> =>
+    pipe(
+      parent,
+      querySelectorEnsureOne(selector, HTMLElement),
+      Either.chain(elt =>
+        pipe(
+          elt.textContent?.trim().replace(whitespaceRegex, ' '),
+          Maybe.fromNullable,
+          Either.fromOption(() => s`No textContent for element: ${selector}`),
+        ),
+      ),
+      Either.filterOrElse(
+        not(looksLikeHTMLTag),
+        str => s`textContent looks like an HTML tag and this might be a problem: ${str}`,
+      ),
+    )
+  const looksLikeHTMLTag = (str: string): boolean => str.startsWith('<') && str.endsWith('/>')
 }

@@ -1,5 +1,6 @@
 import { apply, eq } from 'fp-ts'
-import { flow, not, pipe } from 'fp-ts/function'
+import { flow, pipe } from 'fp-ts/function'
+import * as D from 'io-ts/Decoder'
 
 import { DOMUtils } from '../utils/DOMUtils'
 import { Either, List, Maybe, NonEmptyArray } from '../utils/fp'
@@ -11,34 +12,41 @@ export type AlbumMetadata = {
   readonly album: string
   readonly year: number
   readonly isEp: boolean
+  readonly tracks: NonEmptyArray<Track>
+}
+
+type Track = {
+  readonly number: number
+  readonly title: string
 }
 
 type Validation<A> = Either<NonEmptyArray<string>, A>
+const Validation = {
+  validation: Either.getValidation(NonEmptyArray.getSemigroup<string>()),
+  applicativeValidation: Either.getApplicativeValidation(NonEmptyArray.getSemigroup<string>()),
+}
 
 export namespace AlbumMetadata {
   export const fromDocument = (
     document: DOMUtils.Document,
   ): Either<NonEmptyArray<string>, AlbumMetadata> => {
-    const eitherArtist = lift('artist')(
-      parseText(document, '#name-section a', DOMUtils.HTMLAnchorElement),
-    )
+    const eitherArtist = lift('artist')(DOMUtils.parseText(document, '#name-section a'))
     return pipe(
-      apply.sequenceT(Either.getValidation(NonEmptyArray.getSemigroup<string>()))(
+      apply.sequenceT(Validation.validation)(
         eitherArtist,
-        lift('album')(
-          parseText(document, '#name-section > h2.trackTitle', DOMUtils.HTMLHeadingElement),
-        ),
+        lift('album')(DOMUtils.parseText(document, '#name-section > h2.trackTitle')),
         parseYear(document),
         parseIsEp(eitherArtist),
+        parseTracks(document),
       ),
-      Either.map(([artist, album, year, isEp]) => ({ artist, album, year, isEp })),
+      Either.map(([artist, album, year, isEp, tracks]) => ({ artist, album, year, isEp, tracks })),
     )
   }
 
   const yearRegex = /([0-9]{4})$/
   const parseYear = (document: DOMUtils.Document): Validation<number> =>
     pipe(
-      parseText(document, '#trackInfoInner .tralbumData.tralbum-credits', DOMUtils.HTMLDivElement),
+      DOMUtils.parseText(document, '#trackInfoInner .tralbumData.tralbum-credits'),
       Either.chain(str =>
         pipe(
           str,
@@ -61,29 +69,42 @@ export namespace AlbumMetadata {
       Either.right,
     )
 
-  const parseText = <E extends HTMLElement>(
-    document: DOMUtils.Document,
-    selector: string,
-    type: DOMUtils.Constructor<E>,
-  ): Either<string, string> =>
-    pipe(
-      document,
-      DOMUtils.querySelectorEnsureOne(selector, type),
-      Either.chain(elt =>
-        pipe(
-          elt.textContent?.trim(),
-          Maybe.fromNullable,
-          Either.fromOption(() => s`No textContent for element: ${selector}`),
-        ),
+  const parseTracks = (document: DOMUtils.Document): Validation<NonEmptyArray<Track>> => {
+    const name: keyof AlbumMetadata = 'tracks'
+    const selector = '#track_table tr.track_row_view.linked'
+    return pipe(
+      [...document.querySelectorAll(selector)],
+      NonEmptyArray.fromArray,
+      Either.fromOption(() =>
+        NonEmptyArray.of(s`Failed to decode ${name}: No element matches selector: ${selector}`),
       ),
-      Either.filterOrElse(
-        not(looksLikeHTMLTag),
-        str => s`textContent looks like an HTML tag and this might be a problem: ${str}`,
+      Either.chain(
+        NonEmptyArray.traverseWithIndex(Validation.applicativeValidation)(parseTrack(name)),
       ),
     )
-  const looksLikeHTMLTag = (str: string): boolean => str.startsWith('<') && str.endsWith('/>')
+  }
 
-  const lift = (name: keyof AlbumMetadata) => <A>(e: Either<string, A>): Validation<A> =>
+  const parseTrack = (name: keyof AlbumMetadata) => (
+    i: number,
+    tr: DOMUtils.Element,
+  ): Validation<Track> =>
+    pipe(
+      apply.sequenceS(Validation.validation)({
+        number: lift(s`${name}[${i}].number`)(
+          pipe(
+            DOMUtils.parseText(tr, 'td.track-number-col div.track_number'),
+            Either.chain(str =>
+              pipe(str.slice(0, -1), numberFromString.decode, Either.mapLeft(D.draw)),
+            ),
+          ),
+        ),
+        title: lift(s`${name}[${i}].title`)(
+          DOMUtils.parseText(tr, 'td.title-col span.track-title'),
+        ),
+      }),
+    )
+
+  const lift = (name: string) => <A>(e: Either<string, A>): Validation<A> =>
     pipe(
       e,
       Either.mapLeft(err => NonEmptyArray.of(s`Failed to decode ${name}: ${err}`)),

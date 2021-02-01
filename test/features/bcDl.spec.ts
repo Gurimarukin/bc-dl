@@ -3,6 +3,7 @@ import path from 'path'
 import { flow, pipe } from 'fp-ts/function'
 
 import { ExecYoutubeDl, HttpGet, bcDl, getMetadata, getMp3Tags } from '../../src/features/bcDl'
+import { AlbumMetadata } from '../../src/models/AlbumMetadata'
 import { Future, List } from '../../src/utils/fp'
 import { FsUtils } from '../../src/utils/FsUtils'
 import { s } from '../../src/utils/StringUtils'
@@ -15,12 +16,22 @@ describe('bcDl', () => {
     pipe(
       getMetadata(httpGetMocked)('https://inlustris.bandcamp.com/album/stella-splendens'),
       Future.map(result => {
-        expect(result).toStrictEqual({
+        const expected: AlbumMetadata = {
           album: 'Stella Splendens',
           artist: 'Inlustris',
           isEp: false,
           year: 2020,
-        })
+          tracks: [
+            { number: 1, title: 'Ave Gloriosa' },
+            { number: 2, title: 'Morena Me Llaman' },
+            { number: 3, title: 'Ecco La Primavera' },
+            { number: 4, title: 'Gaudens In Domino' },
+            { number: 5, title: 'Como Somos Per Consello CSM 119' },
+            { number: 6, title: 'Santa Maria, Strela Do Dia CSM 100' },
+            { number: 7, title: 'Stella Splendens' },
+          ],
+        }
+        expect(result).toStrictEqual(expected)
       }),
       Future.runUnsafe,
     ))
