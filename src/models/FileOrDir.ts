@@ -44,6 +44,9 @@ export namespace File {
       basename: nodePath.basename(path),
       dirname: nodePath.dirname(path),
     })
+
+  export const setBasename = (basename: string) => (file: File): File =>
+    fromPath(nodePath.join(file.dirname, basename))
 }
 
 export namespace Dir {

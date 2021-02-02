@@ -3,6 +3,7 @@ import { Command, Opts } from 'decline-ts'
 import { apply } from 'fp-ts'
 import { flow, pipe } from 'fp-ts/function'
 import { JSDOM } from 'jsdom'
+import NodeID3 from 'node-id3'
 
 import { AlbumMetadata } from '../models/AlbumMetadata'
 import { Dir, File, FileOrDir } from '../models/FileOrDir'
@@ -24,6 +25,7 @@ type Args = {
 
 type FileWithTrack = Tuple<File, AlbumMetadata.Track>
 
+const mp3Extension = 'mp3'
 const musicLibraryDirMetavar = 'music library dir'
 
 const cmd = Command({ name: 'bc-dl', header: 'youtube-dl for Bandcamp, with mp3 tags' })(
@@ -142,25 +144,43 @@ const writeMp3TagsToFile = (metadata: AlbumMetadata, cover: Buffer) => ([
   file,
   track,
 ]: FileWithTrack): Future<void> =>
-  TagsUtils.write(
-    {
-      title: track.title,
-      artist: metadata.artist,
-      album: metadata.album,
-      year: s`${metadata.year}`,
-      trackNumber: s`${track.number}`,
-      genre: metadata.genre,
-      // comment: { language: '', text: '' },
-      performerInfo: metadata.artist,
-      image: {
-        mime: 'jpeg',
-        type: { id: 3, name: 'front cover' },
-        description: '',
-        imageBuffer: cover,
-      },
-    },
-    file,
+  pipe(
+    TagsUtils.write(getTags(metadata, cover, track), file),
+    Future.chain(() =>
+      FsUtils.rename(
+        file,
+        pipe(
+          file,
+          File.setBasename(
+            s`${StringUtils.padNumber(track.number)} - ${StringUtils.cleanFileName(
+              track.title,
+            )}.${mp3Extension}`,
+          ),
+        ),
+      ),
+    ),
   )
+
+const getTags = (
+  metadata: AlbumMetadata,
+  cover: Buffer,
+  track: AlbumMetadata.Track,
+): NodeID3.Tags => ({
+  title: track.title,
+  artist: metadata.artist,
+  album: metadata.album,
+  year: s`${metadata.year}`,
+  trackNumber: s`${track.number}`,
+  genre: metadata.genre,
+  // comment: { language: '', text: '' },
+  performerInfo: metadata.artist,
+  image: {
+    mime: 'jpeg',
+    type: { id: 3, name: 'front cover' },
+    description: '',
+    imageBuffer: cover,
+  },
+})
 
 const getMp3Files = (albumDir: Dir): Future<NonEmptyArray<File>> =>
   pipe(
@@ -177,7 +197,7 @@ const getMp3Files = (albumDir: Dir): Future<NonEmptyArray<File>> =>
           if (FileOrDir.isDir(f)) {
             return Either.left(NonEmptyArray.of(s`Unexpected directory: ${f.path}`))
           }
-          if (!f.basename.endsWith('.mp3')) {
+          if (!f.basename.endsWith(s`.${mp3Extension}`)) {
             return Either.left(NonEmptyArray.of(s`Non mp3 file: ${f.path}`))
           }
           return Either.right(f)

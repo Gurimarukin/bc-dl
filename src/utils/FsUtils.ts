@@ -41,6 +41,12 @@ export namespace FsUtils {
   export const readFile = (file: File): Future<string> =>
     Future.tryCatch(() => fs.promises.readFile(file.path, { encoding: 'utf-8' }))
 
+  export function rename(oldF: File, newF: File): Future<void>
+  export function rename(oldF: Dir, newF: Dir): Future<void>
+  export function rename(oldF: FileOrDir, newF: FileOrDir): Future<void> {
+    return Future.tryCatch(() => fs.promises.rename(oldF.path, newF.path))
+  }
+
   export const rmdir = (dir: Dir, options?: fs.RmDirOptions): Future<void> =>
     Future.tryCatch(() => fs.promises.rmdir(dir.path, options))
 }

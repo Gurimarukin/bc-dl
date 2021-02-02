@@ -39,4 +39,9 @@ export namespace StringUtils {
 
   export const matcher1 = (regex: RegExp): ((str: string) => Maybe<string>) =>
     matcher(regex, ([, a]) => Maybe.fromNullable(a))
+
+  export const padNumber = (n: number, size = 2): string => String(n).padStart(size, '0')
+
+  const fileNameForbiddenChars = /[<>:"/\?\*\|\\]/g
+  export const cleanFileName = (str: string): string => str.replace(fileNameForbiddenChars, '')
 }

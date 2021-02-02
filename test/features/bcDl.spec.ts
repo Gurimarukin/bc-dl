@@ -80,7 +80,7 @@ describe('bcDl (e2e)', () => {
 
         expect(result).toStrictEqual([
           [
-            'Inlustris - Ave Gloriosa.mp3',
+            '01 - Ave Gloriosa.mp3',
             {
               album: 'Stella Splendens',
               artist: 'Inlustris',
@@ -98,61 +98,7 @@ describe('bcDl (e2e)', () => {
             },
           ],
           [
-            'Inlustris - Como Somos Per Consello CSM 119.mp3',
-            {
-              album: 'Stella Splendens',
-              artist: 'Inlustris',
-              genre: 'Dungeon Synth',
-              image: {
-                description: undefined,
-                imageBuffer,
-                mime: 'jpeg',
-                type: { id: 3, name: 'front cover' },
-              },
-              performerInfo: 'Inlustris',
-              title: 'Como Somos Per Consello CSM 119',
-              trackNumber: '5',
-              year: '2020',
-            },
-          ],
-          [
-            'Inlustris - Ecco La Primavera.mp3',
-            {
-              album: 'Stella Splendens',
-              artist: 'Inlustris',
-              genre: 'Dungeon Synth',
-              image: {
-                description: undefined,
-                imageBuffer,
-                mime: 'jpeg',
-                type: { id: 3, name: 'front cover' },
-              },
-              performerInfo: 'Inlustris',
-              title: 'Ecco La Primavera',
-              trackNumber: '3',
-              year: '2020',
-            },
-          ],
-          [
-            'Inlustris - Gaudens In Domino.mp3',
-            {
-              album: 'Stella Splendens',
-              artist: 'Inlustris',
-              genre: 'Dungeon Synth',
-              image: {
-                description: undefined,
-                imageBuffer,
-                mime: 'jpeg',
-                type: { id: 3, name: 'front cover' },
-              },
-              performerInfo: 'Inlustris',
-              title: 'Gaudens In Domino',
-              trackNumber: '4',
-              year: '2020',
-            },
-          ],
-          [
-            'Inlustris - Morena Me Llaman.mp3',
+            '02 - Morena Me Llaman.mp3',
             {
               album: 'Stella Splendens',
               artist: 'Inlustris',
@@ -170,7 +116,61 @@ describe('bcDl (e2e)', () => {
             },
           ],
           [
-            'Inlustris - Santa Maria, Strela Do Dia CSM 100.mp3',
+            '03 - Ecco La Primavera.mp3',
+            {
+              album: 'Stella Splendens',
+              artist: 'Inlustris',
+              genre: 'Dungeon Synth',
+              image: {
+                description: undefined,
+                imageBuffer,
+                mime: 'jpeg',
+                type: { id: 3, name: 'front cover' },
+              },
+              performerInfo: 'Inlustris',
+              title: 'Ecco La Primavera',
+              trackNumber: '3',
+              year: '2020',
+            },
+          ],
+          [
+            '04 - Gaudens In Domino.mp3',
+            {
+              album: 'Stella Splendens',
+              artist: 'Inlustris',
+              genre: 'Dungeon Synth',
+              image: {
+                description: undefined,
+                imageBuffer,
+                mime: 'jpeg',
+                type: { id: 3, name: 'front cover' },
+              },
+              performerInfo: 'Inlustris',
+              title: 'Gaudens In Domino',
+              trackNumber: '4',
+              year: '2020',
+            },
+          ],
+          [
+            '05 - Como Somos Per Consello CSM 119.mp3',
+            {
+              album: 'Stella Splendens',
+              artist: 'Inlustris',
+              genre: 'Dungeon Synth',
+              image: {
+                description: undefined,
+                imageBuffer,
+                mime: 'jpeg',
+                type: { id: 3, name: 'front cover' },
+              },
+              performerInfo: 'Inlustris',
+              title: 'Como Somos Per Consello CSM 119',
+              trackNumber: '5',
+              year: '2020',
+            },
+          ],
+          [
+            '06 - Santa Maria, Strela Do Dia CSM 100.mp3',
             {
               album: 'Stella Splendens',
               artist: 'Inlustris',
@@ -188,7 +188,7 @@ describe('bcDl (e2e)', () => {
             },
           ],
           [
-            'Inlustris - Stella Splendens.mp3',
+            '07 - Stella Splendens.mp3',
             {
               album: 'Stella Splendens',
               artist: 'Inlustris',
