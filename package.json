@@ -7,7 +7,7 @@
   "author": "Gurimarukin",
   "license": "MIT",
   "scripts": {
-    "dl": "ts-node src/index.ts",
+    "dl": "ts-node src/dl.ts",
     "prettier": "prettier --check \"./{src,test}/**/*.ts\"",
     "prettier-fix": "prettier --write \"./{src,test}/**/*.ts\"",
     "import-sort": "import-sort --list-different \"./{src,test}/**/*.ts\"",
