@@ -8,43 +8,23 @@ import NodeID3 from 'node-id3'
 import { AlbumMetadata } from '../models/AlbumMetadata'
 import { Dir, File, FileOrDir } from '../models/FileOrDir'
 import { Genre } from '../models/Genre'
+import { Url } from '../models/Url'
 import { Validation } from '../models/Validation'
-import { Console } from '../utils/Console'
 import { Either, Future, List, Maybe, NonEmptyArray, Tuple } from '../utils/fp'
 import { FsUtils } from '../utils/FsUtils'
 import { StringUtils, s } from '../utils/StringUtils'
 import { TagsUtils } from '../utils/TagsUtils'
+import { CmdArgs, log, parseCommand } from './common'
 
-export type HttpGet = (url: string) => Future<AxiosResponse<string>>
-export type HttpGetBuffer = (url: string) => Future<AxiosResponse<Buffer>>
-export type ExecYoutubeDl = (url: string) => Future<void>
-
-type Args = {
-  readonly musicLibraryDir: Dir
-  readonly url: string
-  readonly genre: Genre
-}
+export type HttpGet = (url: Url) => Future<AxiosResponse<string>>
+export type HttpGetBuffer = (url: Url) => Future<AxiosResponse<Buffer>>
+export type ExecYoutubeDl = (url: Url) => Future<void>
 
 type FileWithTrack = Tuple<File, AlbumMetadata.Track>
 
 const mp3Extension = 'mp3'
-const genresTxt = pipe(Dir.of(__dirname), Dir.joinFile('..', '..', 'genres.txt'))
-const musicLibraryDirMetavar = 'music library dir'
 
-const cmd = Command({ name: 'bc-dl', header: 'youtube-dl for Bandcamp, with mp3 tags' })(
-  pipe(
-    apply.sequenceT(Opts.opts)(
-      Opts.argument()(musicLibraryDirMetavar),
-      Opts.argument()('url'),
-      Opts.argument(codecToDecode(Genre.codec))('genre'),
-    ),
-    Opts.map(([musicLibraryDir, url, genre]) => ({
-      musicLibraryDir,
-      url,
-      genre,
-    })),
-  ),
-)
+const cmd = CmdArgs.of('bc-dl', 'youtube-dl for Bandcamp, with mp3 tags')
 
 export const bcDl = (
   argv: List<string>,
@@ -53,60 +33,44 @@ export const bcDl = (
   execYoutubeDl: ExecYoutubeDl,
 ): Future<void> =>
   pipe(
-    Future.Do,
-    Future.bind('args', () => parseCommand(argv)),
-    Future.do(() => Future.fromIOEither(Console.log('>>> Fetching metadata'))),
-    Future.bind('metadata', ({ args }) => getMetadata(httpGet)(args)),
-    Future.bind('albumDir', ({ args, metadata }) =>
-      ensureAlbumDirectory(args.musicLibraryDir, metadata),
+    parseCommand(cmd, argv),
+    Future.chain(args =>
+      pipe(
+        args.urls,
+        NonEmptyArray.map(
+          downloadAlbum(httpGet, httpGetBuffer, execYoutubeDl)(args.musicLibraryDir, args.genre),
+        ),
+        Future.sequenceArray,
+      ),
     ),
+    Future.map<List<void>, void>(() => {}),
+  )
+
+const downloadAlbum = (
+  httpGet: HttpGet,
+  httpGetBuffer: HttpGetBuffer,
+  execYoutubeDl: ExecYoutubeDl,
+) => (musicLibraryDir: Dir, genre: Genre) => (url: Url): Future<void> =>
+  pipe(
+    Future.Do,
+
+    log(s`>>> [${url}] Fetching metadata`),
+    Future.bind('metadata', () => getMetadata(httpGet)(genre, url)),
+    Future.bind('albumDir', ({ metadata }) => ensureAlbumDirectory(musicLibraryDir, metadata)),
     Future.do(({ albumDir }) => Future.fromIOEither(FsUtils.chdir(albumDir))),
-    Future.do(() => Future.fromIOEither(Console.log('>>> Downloading album'))),
-    Future.do(({ args }) => execYoutubeDl(args.url)),
-    Future.bind('mp3files', ({ albumDir }) => getMp3Files(albumDir)),
-    Future.do(() => Future.fromIOEither(Console.log('>>> Downloading cover'))),
+
+    log(s`>>> [${url}] Downloading album`),
+    Future.do(() => execYoutubeDl(url)),
+
+    log(s`>>> [${url}] Downloading cover`),
     Future.bind('cover', ({ metadata }) => downloadCover(httpGetBuffer)(metadata.coverUrl)),
-    Future.do(() => Future.fromIOEither(Console.log('>>> Writing tags and renaming files'))),
+
+    log(s`>>> [${url}] Writing tags and renaming files`),
+    Future.bind('mp3files', ({ albumDir }) => getDownloadedMp3Files(albumDir)),
     Future.chain(({ mp3files, metadata, cover }) => writeMp3TagsToFiles(mp3files, metadata, cover)),
   )
 
-const parseCommand = (argv: List<string>): Future<Args> =>
-  pipe(
-    Future.Do,
-    Future.bind('genres', () => getGenres()),
-    Future.bind('args', () =>
-      pipe(cmd, Command.parse(argv), Either.mapLeft(Error), Future.fromEither),
-    ),
-    Future.bind('cwd', () => Future.fromIOEither(FsUtils.cwd())),
-    Future.bind('musicLibraryDir', ({ genres, args, cwd }) =>
-      pipe(genres, List.elem(Genre.eq)(args.genre))
-        ? Future.fromIOEither(pipe(cwd, Dir.resolveDir(args.musicLibraryDir)))
-        : Future.left(Error(s`Unknown genre "${args.genre}" (add it to file ${genresTxt.path})`)),
-    ),
-    Future.map(({ args, musicLibraryDir }) => ({ ...args, musicLibraryDir })),
-  )
-
-const getGenres = (): Future<NonEmptyArray<Genre>> =>
-  pipe(
-    FsUtils.readFile(genresTxt),
-    Future.chain(content =>
-      pipe(
-        content.split('\n'),
-        List.filterMap(l => {
-          const trimed = l.trim()
-          return StringUtils.isNonEmpty(trimed) ? Maybe.some(Genre.wrap(trimed)) : Maybe.none
-        }),
-        NonEmptyArray.fromReadonlyArray,
-        Either.fromOption(() => Error(s`Genres file shouldn't be empty: ${genresTxt.path}`)),
-        Future.fromEither,
-      ),
-    ),
-  )
-
-export const getMetadata = (httpGet: HttpGet) => ({
-  url,
-  genre,
-}: Pick<Args, 'url' | 'genre'>): Future<AlbumMetadata> =>
+export const getMetadata = (httpGet: HttpGet) => (genre: Genre, url: Url): Future<AlbumMetadata> =>
   pipe(
     httpGet(url),
     Future.chain(({ data }) =>
@@ -142,7 +106,7 @@ const ensureAlbumDirectory = (musicLibraryDir: Dir, metadata: AlbumMetadata): Fu
   )
 }
 
-const downloadCover = (httpGetBuffer: HttpGetBuffer) => (coverUrl: string): Future<Buffer> =>
+const downloadCover = (httpGetBuffer: HttpGetBuffer) => (coverUrl: Url): Future<Buffer> =>
   pipe(
     httpGetBuffer(coverUrl),
     Future.map(res => res.data),
@@ -201,7 +165,7 @@ const getTags = (
   },
 })
 
-const getMp3Files = (albumDir: Dir): Future<NonEmptyArray<File>> =>
+const getDownloadedMp3Files = (albumDir: Dir): Future<NonEmptyArray<File>> =>
   pipe(
     FsUtils.readdir(albumDir),
     Future.chain(

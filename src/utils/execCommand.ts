@@ -2,6 +2,8 @@ import childProcess from 'child_process'
 
 import { pipe } from 'fp-ts/function'
 
+import { ExecYoutubeDl } from '../features/bcDl'
+import { Url } from '../models/Url'
 import { Either, Future, List } from './fp'
 import { StringUtils } from './StringUtils'
 
@@ -32,9 +34,9 @@ export const execCommand = (
   )
 }
 
-export const execYoutubeDl = (url: string): Future<void> =>
+export const execYoutubeDl: ExecYoutubeDl = url =>
   pipe(
-    execCommand('youtube-dl', [url]),
+    execCommand('youtube-dl', [Url.unwrap(url)]),
     Future.chain(
       Either.fold(
         e => Future.left(e),

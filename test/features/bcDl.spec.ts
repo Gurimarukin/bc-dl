@@ -4,7 +4,8 @@ import { ExecYoutubeDl, HttpGet, HttpGetBuffer, bcDl, getMetadata } from '../../
 import { AlbumMetadata } from '../../src/models/AlbumMetadata'
 import { Dir, File, FileOrDir } from '../../src/models/FileOrDir'
 import { Genre } from '../../src/models/Genre'
-import { Future, List, NonEmptyString, Tuple } from '../../src/utils/fp'
+import { Url } from '../../src/models/Url'
+import { Future, List, Tuple } from '../../src/utils/fp'
 import { FsUtils } from '../../src/utils/FsUtils'
 import { s } from '../../src/utils/StringUtils'
 import { TagsUtils } from '../../src/utils/TagsUtils'
@@ -15,16 +16,16 @@ const mp3Dir = pipe(Dir.of(__dirname), Dir.joinDir('..', 'resources', 'mp3'))
 describe('bcDl', () => {
   it('should get metadata', () =>
     pipe(
-      getMetadata(httpGetMocked)({
-        url: 'https://inlustris.bandcamp.com/album/stella-splendens',
-        genre: Genre.wrap('Dungeon Synth' as NonEmptyString),
-      }),
+      getMetadata(httpGetMocked)(
+        Genre.wrap('Dungeon Synth'),
+        Url.wrap('https://inlustris.bandcamp.com/album/stella-splendens'),
+      ),
       Future.map(result => {
         const expected: AlbumMetadata = {
           artist: 'Inlustris',
           album: 'Stella Splendens',
           year: 2020,
-          genre: Genre.wrap('Dungeon Synth' as NonEmptyString),
+          genre: Genre.wrap('Dungeon Synth'),
           isEp: false,
           tracks: [
             { number: 1, title: 'Ave Gloriosa' },
@@ -35,7 +36,7 @@ describe('bcDl', () => {
             { number: 6, title: 'Santa Maria, Strela Do Dia CSM 100' },
             { number: 7, title: 'Stella Splendens' },
           ],
-          coverUrl: 'https://f4.bcbits.com/img/a3172027603_16.jpg',
+          coverUrl: Url.wrap('https://f4.bcbits.com/img/a3172027603_16.jpg'),
         }
         expect(result).toStrictEqual(expected)
       }),
@@ -50,7 +51,7 @@ describe('bcDl (e2e)', () => {
   it('should e2e', () =>
     pipe(
       bcDl(
-        ['test/music', 'https://inlustris.bandcamp.com/album/stella-splendens', 'Dungeon Synth'],
+        ['test/music', 'Dungeon Synth', 'https://inlustris.bandcamp.com/album/stella-splendens'],
         httpGetMocked,
         httpGetBufferMocked,
         execYoutubeDlMocked,
@@ -225,7 +226,7 @@ const cleanMusicDir = (): Future<void> =>
   )
 
 const httpGetMocked: HttpGet = url => {
-  if (url === 'https://inlustris.bandcamp.com/album/stella-splendens') {
+  if (url === Url.wrap('https://inlustris.bandcamp.com/album/stella-splendens')) {
     return pipe(
       FsUtils.readFile(
         pipe(Dir.of(__dirname), Dir.joinFile('..', 'resources', 'stella-splendens.html')),
@@ -233,11 +234,11 @@ const httpGetMocked: HttpGet = url => {
       Future.map(data => ({ status: 200, statusText: 'OK', headers: {}, config: {}, data })),
     )
   }
-  return Future.left(Error('Unknown url'))
+  return Future.left(Error(s`Unknown url: ${url}`))
 }
 
 const execYoutubeDlMocked: ExecYoutubeDl = url => {
-  if (url === 'https://inlustris.bandcamp.com/album/stella-splendens') {
+  if (url === Url.wrap('https://inlustris.bandcamp.com/album/stella-splendens')) {
     return pipe(
       Future.Do,
       Future.bind('mp3DirContent', () => FsUtils.readdir(mp3Dir)),
@@ -256,11 +257,11 @@ const execYoutubeDlMocked: ExecYoutubeDl = url => {
       Future.map(() => {}),
     )
   }
-  return Future.left(Error('Unknown url'))
+  return Future.left(Error(s`Unknown url: ${url}`))
 }
 
 const httpGetBufferMocked: HttpGetBuffer = url => {
-  if (url === 'https://f4.bcbits.com/img/a3172027603_16.jpg') {
+  if (url === Url.wrap('https://f4.bcbits.com/img/a3172027603_16.jpg')) {
     return Future.right({
       status: 200,
       statusText: 'OK',
@@ -269,5 +270,5 @@ const httpGetBufferMocked: HttpGetBuffer = url => {
       data: Buffer.from('Image Buffer', 'utf-8'),
     })
   }
-  return Future.left(Error('Unknown url'))
+  return Future.left(Error(s`Unknown url: ${url}`))
 }

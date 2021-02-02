@@ -1,16 +1,26 @@
 import axios, { AxiosRequestConfig, AxiosResponse } from 'axios'
 import { pipe } from 'fp-ts/function'
 
+import { Url } from '../models/Url'
 import { Future } from './fp'
 
+type Config = Omit<AxiosRequestConfig, 'url'> & {
+  readonly url?: Url
+}
+
 export namespace AxiosUtils {
-  export const request = (config: AxiosRequestConfig): Future<AxiosResponse<unknown>> =>
-    Future.tryCatch(() => axios.request<unknown>(config))
+  export const request = (config: Config): Future<AxiosResponse<unknown>> =>
+    Future.tryCatch(() =>
+      axios.request<unknown>({
+        ...config,
+        url: config.url === undefined ? undefined : Url.unwrap(config.url),
+      }),
+    )
 
   export namespace Document {
     export const get = (
-      url: string,
-      config: Omit<AxiosRequestConfig, 'method' | 'url' | 'responseType'> = {},
+      url: Url,
+      config: Omit<Config, 'method' | 'url' | 'responseType'> = {},
     ): Future<AxiosResponse<string>> =>
       pipe(
         request({ ...config, method: 'get', url, responseType: 'document' }),
@@ -25,8 +35,8 @@ export namespace AxiosUtils {
   // eslint-disable-next-line no-shadow
   export namespace ArrayBuffer {
     export const get = (
-      url: string,
-      config: Omit<AxiosRequestConfig, 'method' | 'url' | 'responseType'> = {},
+      url: Url,
+      config: Omit<Config, 'method' | 'url' | 'responseType'> = {},
     ): Future<AxiosResponse<Buffer>> =>
       pipe(
         request({ ...config, method: 'get', url, responseType: 'arraybuffer' }),

@@ -1,7 +1,7 @@
-import { pipe } from 'fp-ts/function'
+import { not, pipe } from 'fp-ts/function'
 import { Newtype } from 'newtype-ts'
 
-import { List, Maybe, stringIsNonEmpty } from './fp'
+import { List, Maybe } from './fp'
 
 type NiceStringDefault = string | number | boolean | undefined | null
 type NiceString = NiceStringDefault | Newtype<unknown, NiceStringDefault>
@@ -16,7 +16,7 @@ export const s = (strings: TemplateStringsArray, ...interpolates: List<NiceStrin
 
 export namespace StringUtils {
   export const isEmpty = (str: string): str is '' => str === ''
-  export const isNonEmpty = stringIsNonEmpty
+  export const isNonEmpty = not(isEmpty)
 
   const margin = /^[^\n\S]*\|/gm
   export const stripMargins = (str: string): string => str.replace(margin, '')

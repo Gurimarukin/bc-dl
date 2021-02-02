@@ -7,6 +7,7 @@ import { Either, List, Maybe, NonEmptyArray } from '../utils/fp'
 import { numberFromString } from '../utils/ioTsTypes'
 import { StringUtils, s } from '../utils/StringUtils'
 import { Genre } from './Genre'
+import { Url } from './Url'
 import { Validation } from './Validation'
 
 export type AlbumMetadata = {
@@ -16,7 +17,7 @@ export type AlbumMetadata = {
   readonly genre: Genre
   readonly isEp: boolean
   readonly tracks: NonEmptyArray<AlbumMetadata.Track>
-  readonly coverUrl: string
+  readonly coverUrl: Url
 }
 
 export namespace AlbumMetadata {
@@ -111,12 +112,13 @@ export namespace AlbumMetadata {
       }),
     )
 
-  const parseCoverUrl = (document: DOMUtils.Document): Validation<string> =>
+  const parseCoverUrl = (document: DOMUtils.Document): Validation<Url> =>
     pipe(
       document,
       DOMUtils.querySelectorEnsureOne('#tralbumArt img', DOMUtils.HTMLImageElement),
       Either.map(e => e.src),
       Either.filterOrElse(isJpg, src => s`Expected cover to be a jpg: ${src}`),
+      Either.map(Url.wrap),
       lift('coverUrl'),
     )
   const jpgStrings = ['.jpg', '.jpeg']
