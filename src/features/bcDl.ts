@@ -58,7 +58,6 @@ export const bcDl = (
     Future.bind('albumDir', ({ args, metadata }) =>
       ensureAlbumDirectory(args.musicLibraryDir, metadata),
     ),
-    // Future.bind('initialCwd', () => Future.fromIOEither(FsUtils.cwd())),
     Future.do(({ albumDir }) => Future.fromIOEither(FsUtils.chdir(albumDir))),
     Future.do(({ args }) => execYoutubeDl(args.url)),
     Future.bind('mp3files', ({ albumDir }) => getMp3Files(albumDir)),
@@ -74,11 +73,12 @@ const parseCommand = (argv: List<string>): Future<Args> =>
       pipe(cmd, Command.parse(argv), Either.mapLeft(Error), Future.fromEither),
     ),
     Future.bind('cwd', () => Future.fromIOEither(FsUtils.cwd())),
-    Future.chain(({ genres, args, cwd }) =>
+    Future.bind('musicLibraryDir', ({ genres, args, cwd }) =>
       pipe(genres, List.elem(Genre.eq)(args.genre))
-        ? Future.right({ ...args, musicLibraryDir: pipe(cwd, Dir.joinDir(args.musicLibraryDir)) })
+        ? Future.fromIOEither(pipe(cwd, Dir.resolveDir(args.musicLibraryDir)))
         : Future.left(Error(s`Unknown genre "${args.genre}" (add it to file ${genresTxt.path})`)),
     ),
+    Future.map(({ args, musicLibraryDir }) => ({ ...args, musicLibraryDir })),
   )
 
 const getGenres = (): Future<NonEmptyArray<Genre>> =>

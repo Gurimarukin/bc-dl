@@ -50,7 +50,7 @@ export namespace AlbumMetadata {
     )
   }
 
-  const yearRegex = /([0-9]{4})$/
+  const yearRegex = /\D(\d{4})/
   const parseYear = (document: DOMUtils.Document): Validation<number> =>
     pipe(
       DOMUtils.parseText(document, '#trackInfoInner .tralbumData.tralbum-credits'),

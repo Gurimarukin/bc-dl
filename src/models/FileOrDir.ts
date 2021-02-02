@@ -1,7 +1,9 @@
 import fs from 'fs'
 import nodePath from 'path'
 
-import { List } from '../utils/fp'
+import { pipe } from 'fp-ts/function'
+
+import { IO, List } from '../utils/fp'
 
 export type FileOrDir = File | Dir
 
@@ -52,7 +54,11 @@ export namespace File {
 export namespace Dir {
   export const of = (path: string): Dir => ({ _tag: 'Dir', path })
 
-  export const resolve = (path: string): Dir => of(nodePath.resolve(path))
+  export const resolveDir = (path: string, ...paths: List<string>) => (dir: Dir): IO<Dir> =>
+    pipe(
+      IO.tryCatch(() => nodePath.resolve(dir.path, path, ...paths)),
+      IO.map(of),
+    )
 
   export const joinDir = (path: string, ...paths: List<string>) => (dir: Dir): Dir =>
     of(nodePath.join(dir.path, path, ...paths))
