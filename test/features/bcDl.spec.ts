@@ -3,7 +3,8 @@ import { flow, pipe } from 'fp-ts/function'
 import { ExecYoutubeDl, HttpGet, HttpGetBuffer, bcDl, getMetadata } from '../../src/features/bcDl'
 import { AlbumMetadata } from '../../src/models/AlbumMetadata'
 import { Dir, File, FileOrDir } from '../../src/models/FileOrDir'
-import { Future, List, Tuple } from '../../src/utils/fp'
+import { Genre } from '../../src/models/Genre'
+import { Future, List, NonEmptyString, Tuple } from '../../src/utils/fp'
 import { FsUtils } from '../../src/utils/FsUtils'
 import { s } from '../../src/utils/StringUtils'
 import { TagsUtils } from '../../src/utils/TagsUtils'
@@ -16,14 +17,14 @@ describe('bcDl', () => {
     pipe(
       getMetadata(httpGetMocked)({
         url: 'https://inlustris.bandcamp.com/album/stella-splendens',
-        genre: 'Dungeon Synth',
+        genre: Genre.wrap('Dungeon Synth' as NonEmptyString),
       }),
       Future.map(result => {
         const expected: AlbumMetadata = {
           artist: 'Inlustris',
           album: 'Stella Splendens',
           year: 2020,
-          genre: 'Dungeon Synth',
+          genre: Genre.wrap('Dungeon Synth' as NonEmptyString),
           isEp: false,
           tracks: [
             { number: 1, title: 'Ave Gloriosa' },

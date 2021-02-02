@@ -1449,10 +1449,10 @@ decimal.js@^10.2.0:
   resolved "https://registry.yarnpkg.com/decimal.js/-/decimal.js-10.2.1.tgz#238ae7b0f0c793d3e3cea410108b35a2c01426a3"
   integrity sha512-KaL7+6Fw6i5A2XSnsbhm/6B+NuEA7TZ4vqxnd5tXz9sbKtrN9Srj8ab4vKVdK8YAqZO9P1kg45Y6YLoduPf+kw==
 
-decline-ts@^0.7.0:
-  version "0.7.0"
-  resolved "https://registry.yarnpkg.com/decline-ts/-/decline-ts-0.7.0.tgz#a7a0b09ddb13aaf4685c64f6bac11388cc27bfbd"
-  integrity sha512-2ezq5jqoufszycLMjRNywVuU9Yvx04eRiDQhlhn+48xdpptwvuzpcTU6Ts1pR4sTpGBpF8+GqJ9u1FmOhYl+fQ==
+decline-ts@^0.9.0:
+  version "0.9.0"
+  resolved "https://registry.yarnpkg.com/decline-ts/-/decline-ts-0.9.0.tgz#de5cfece6926cae67e33bbc26f6ee3a5851d8e6d"
+  integrity sha512-pSabDCq+ZPYyinNFq8koD9MQK57rxa3nCuVxEtxNq5jP3otdSpzO+R4/xkqEjilFwiiyJ4f4DjhwqIsCfY+6dw==
 
 decode-uri-component@^0.2.0:
   version "0.2.0"

@@ -1,12 +1,13 @@
 import { pipe } from 'fp-ts/function'
+import { Newtype } from 'newtype-ts'
 
-import { List, Maybe } from './fp'
+import { List, Maybe, stringIsNonEmpty } from './fp'
+
+type NiceStringDefault = string | number | boolean | undefined | null
+type NiceString = NiceStringDefault | Newtype<unknown, NiceStringDefault>
 
 // interpolates.length is always strings.length - 1
-export const s = (
-  strings: TemplateStringsArray,
-  ...interpolates: List<string | number | boolean>
-): string =>
+export const s = (strings: TemplateStringsArray, ...interpolates: List<NiceString>): string =>
   pipe(
     strings,
     List.zip(List.snoc(interpolates, '')),
@@ -15,7 +16,7 @@ export const s = (
 
 export namespace StringUtils {
   export const isEmpty = (str: string): str is '' => str === ''
-  export const isNonEmpty = (str: string): boolean => !isEmpty(str)
+  export const isNonEmpty = stringIsNonEmpty
 
   const margin = /^[^\n\S]*\|/gm
   export const stripMargins = (str: string): string => str.replace(margin, '')

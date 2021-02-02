@@ -6,13 +6,14 @@ import { DOMUtils } from '../utils/DOMUtils'
 import { Either, List, Maybe, NonEmptyArray } from '../utils/fp'
 import { numberFromString } from '../utils/ioTsTypes'
 import { StringUtils, s } from '../utils/StringUtils'
+import { Genre } from './Genre'
 import { Validation } from './Validation'
 
 export type AlbumMetadata = {
   readonly artist: string
   readonly album: string
   readonly year: number
-  readonly genre: string
+  readonly genre: Genre
   readonly isEp: boolean
   readonly tracks: NonEmptyArray<AlbumMetadata.Track>
   readonly coverUrl: string
@@ -24,7 +25,7 @@ export namespace AlbumMetadata {
     readonly title: string
   }
 
-  export const fromDocument = (genre: string) => (
+  export const fromDocument = (genre: Genre) => (
     document: DOMUtils.Document,
   ): Either<NonEmptyArray<string>, AlbumMetadata> => {
     const eitherArtist = lift('artist')(DOMUtils.parseText(document, '#name-section a'))

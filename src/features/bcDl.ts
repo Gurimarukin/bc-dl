@@ -1,5 +1,5 @@
 import { AxiosResponse } from 'axios'
-import { Command, Opts } from 'decline-ts'
+import { Command, Opts, codecToDecode } from 'decline-ts'
 import { apply } from 'fp-ts'
 import { flow, pipe } from 'fp-ts/function'
 import { JSDOM } from 'jsdom'
@@ -7,6 +7,7 @@ import NodeID3 from 'node-id3'
 
 import { AlbumMetadata } from '../models/AlbumMetadata'
 import { Dir, File, FileOrDir } from '../models/FileOrDir'
+import { Genre } from '../models/Genre'
 import { Validation } from '../models/Validation'
 import { Either, Future, List, Maybe, NonEmptyArray, Tuple } from '../utils/fp'
 import { FsUtils } from '../utils/FsUtils'
@@ -20,12 +21,13 @@ export type ExecYoutubeDl = (url: string) => Future<void>
 type Args = {
   readonly musicLibraryDir: Dir
   readonly url: string
-  readonly genre: string
+  readonly genre: Genre
 }
 
 type FileWithTrack = Tuple<File, AlbumMetadata.Track>
 
 const mp3Extension = 'mp3'
+const genresTxt = pipe(Dir.of(__dirname), Dir.joinFile('..', '..', 'genres.txt'))
 const musicLibraryDirMetavar = 'music library dir'
 
 const cmd = Command({ name: 'bc-dl', header: 'youtube-dl for Bandcamp, with mp3 tags' })(
@@ -33,7 +35,7 @@ const cmd = Command({ name: 'bc-dl', header: 'youtube-dl for Bandcamp, with mp3 
     apply.sequenceT(Opts.opts)(
       Opts.argument()(musicLibraryDirMetavar),
       Opts.argument()('url'),
-      Opts.argument()('genre'),
+      Opts.argument(codecToDecode(Genre.codec))('genre'),
     ),
     Opts.map(([musicLibraryDir, url, genre]) => ({
       musicLibraryDir,
@@ -66,20 +68,32 @@ export const bcDl = (
 
 const parseCommand = (argv: List<string>): Future<Args> =>
   pipe(
-    cmd,
-    Command.parse(argv),
-    Either.mapLeft(Error),
-    Future.fromEither,
-    Future.chain(args =>
+    Future.Do,
+    Future.bind('genres', () => getGenres()),
+    Future.bind('args', () =>
+      pipe(cmd, Command.parse(argv), Either.mapLeft(Error), Future.fromEither),
+    ),
+    Future.bind('cwd', () => Future.fromIOEither(FsUtils.cwd())),
+    Future.chain(({ genres, args, cwd }) =>
+      pipe(genres, List.elem(Genre.eq)(args.genre))
+        ? Future.right({ ...args, musicLibraryDir: pipe(cwd, Dir.joinDir(args.musicLibraryDir)) })
+        : Future.left(Error(s`Unknown genre "${args.genre}" (add it to file ${genresTxt.path})`)),
+    ),
+  )
+
+const getGenres = (): Future<NonEmptyArray<Genre>> =>
+  pipe(
+    FsUtils.readFile(genresTxt),
+    Future.chain(content =>
       pipe(
-        FsUtils.cwd(),
-        Future.fromIOEither,
-        Future.map(
-          (cwd): Args => ({
-            ...args,
-            musicLibraryDir: pipe(cwd, Dir.joinDir(args.musicLibraryDir)),
-          }),
-        ),
+        content.split('\n'),
+        List.filterMap(l => {
+          const trimed = l.trim()
+          return StringUtils.isNonEmpty(trimed) ? Maybe.some(Genre.wrap(trimed)) : Maybe.none
+        }),
+        NonEmptyArray.fromReadonlyArray,
+        Either.fromOption(() => Error(s`Genres file shouldn't be empty: ${genresTxt.path}`)),
+        Future.fromEither,
       ),
     ),
   )
@@ -171,7 +185,7 @@ const getTags = (
   album: metadata.album,
   year: s`${metadata.year}`,
   trackNumber: s`${track.number}`,
-  genre: metadata.genre,
+  genre: Genre.unwrap(metadata.genre),
   // comment: { language: '', text: '' },
   performerInfo: metadata.artist,
   image: {

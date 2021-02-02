@@ -13,6 +13,9 @@ import {
 import { Lazy, pipe } from 'fp-ts/function'
 import { Kind, Kind2, URIS, URIS2 } from 'fp-ts/HKT'
 import { Monad1, Monad2 } from 'fp-ts/Monad'
+import * as C from 'io-ts/Codec'
+import * as D from 'io-ts/Decoder'
+import * as Enc from 'io-ts/Encoder'
 
 export const todo = (...[]: List<unknown>): never => {
   // eslint-disable-next-line functional/no-throw-statement
@@ -43,6 +46,13 @@ export type NonEmptyArray<A> = readonlyNonEmptyArray.ReadonlyNonEmptyArray<A>
 export const NonEmptyArray = {
   ...readonlyNonEmptyArray,
   do: getDo1(readonlyNonEmptyArray.readonlyNonEmptyArray),
+  codec: <O, A>(
+    codec: C.Codec<unknown, O, A>,
+  ): C.Codec<unknown, NonEmptyArray<O>, NonEmptyArray<A>> =>
+    C.make(
+      pipe(D.array(codec), D.refine<List<A>, NonEmptyArray<A>>(List.isNonEmpty, 'NonEmptyArray')),
+      { encode: a => pipe(a, NonEmptyArray.map(codec.encode)) },
+    ),
 }
 
 // can't just alias it to `Array`
@@ -59,6 +69,17 @@ export type Tuple<A, B> = readonly [A, B]
 export const Tuple = {
   ...readonlyTuple,
   of: <A, B>(a: A, b: B): Tuple<A, B> => [a, b],
+}
+
+export type NonEmptyString = string & {
+  readonly [0]: NonEmptyString
+}
+export const stringIsNonEmpty = (str: string): str is NonEmptyString => str !== ''
+export const NonEmptyString = {
+  codec: C.make<unknown, NonEmptyString, NonEmptyString>(
+    pipe(D.string, D.refine(stringIsNonEmpty, 'NonEmptyString')),
+    Enc.id<NonEmptyString>(),
+  ),
 }
 
 const unknownAsError = (e: unknown): Error => e as Error
