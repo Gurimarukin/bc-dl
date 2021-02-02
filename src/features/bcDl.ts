@@ -9,6 +9,7 @@ import { AlbumMetadata } from '../models/AlbumMetadata'
 import { Dir, File, FileOrDir } from '../models/FileOrDir'
 import { Genre } from '../models/Genre'
 import { Validation } from '../models/Validation'
+import { Console } from '../utils/Console'
 import { Either, Future, List, Maybe, NonEmptyArray, Tuple } from '../utils/fp'
 import { FsUtils } from '../utils/FsUtils'
 import { StringUtils, s } from '../utils/StringUtils'
@@ -54,14 +55,18 @@ export const bcDl = (
   pipe(
     Future.Do,
     Future.bind('args', () => parseCommand(argv)),
+    Future.do(() => Future.fromIOEither(Console.log('>>> Fetching metadata'))),
     Future.bind('metadata', ({ args }) => getMetadata(httpGet)(args)),
     Future.bind('albumDir', ({ args, metadata }) =>
       ensureAlbumDirectory(args.musicLibraryDir, metadata),
     ),
     Future.do(({ albumDir }) => Future.fromIOEither(FsUtils.chdir(albumDir))),
+    Future.do(() => Future.fromIOEither(Console.log('>>> Downloading album'))),
     Future.do(({ args }) => execYoutubeDl(args.url)),
     Future.bind('mp3files', ({ albumDir }) => getMp3Files(albumDir)),
+    Future.do(() => Future.fromIOEither(Console.log('>>> Downloading cover'))),
     Future.bind('cover', ({ metadata }) => downloadCover(httpGetBuffer)(metadata.coverUrl)),
+    Future.do(() => Future.fromIOEither(Console.log('>>> Writing tags and renaming files'))),
     Future.chain(({ mp3files, metadata, cover }) => writeMp3TagsToFiles(mp3files, metadata, cover)),
   )
 
