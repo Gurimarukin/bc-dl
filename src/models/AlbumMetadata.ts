@@ -2,6 +2,7 @@ import { apply, eq } from 'fp-ts'
 import { flow, pipe } from 'fp-ts/function'
 import * as D from 'io-ts/Decoder'
 
+import { config } from '../config'
 import { DOMUtils } from '../utils/DOMUtils'
 import { Either, List, Maybe, NonEmptyArray } from '../utils/fp'
 import { numberFromString } from '../utils/ioTsTypes'
@@ -66,13 +67,12 @@ export namespace AlbumMetadata {
       lift('year'),
     )
 
-  const epStrings = ['EP', 'E.P', 'E. P']
   const parseIsEp = (album: Validation<string>): Either<never, boolean> =>
     pipe(
       album,
       Either.fold(
         () => false,
-        str => pipe(epStrings, List.elem(eq.eqString)(str)),
+        str => pipe(config.epStrings, List.elem(eq.eqString)(str)),
       ),
       Either.right,
     )
@@ -121,10 +121,9 @@ export namespace AlbumMetadata {
       Either.map(Url.wrap),
       lift('coverUrl'),
     )
-  const jpgStrings = ['.jpg', '.jpeg']
   const isJpg = (src: string): boolean => {
     const srcLower = src.toLowerCase()
-    return jpgStrings.some(ext => srcLower.endsWith(ext))
+    return config.jpgExtension.some(ext => srcLower.endsWith(ext))
   }
 
   const lift = (name: string) => <A>(e: Either<string, A>): Validation<A> =>
