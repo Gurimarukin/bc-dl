@@ -1,22 +1,20 @@
-import path from 'path'
-
 import { flow, pipe } from 'fp-ts/function'
 
 import { ExecYoutubeDl, HttpGet, HttpGetBuffer, bcDl, getMetadata } from '../../src/features/bcDl'
 import { AlbumMetadata } from '../../src/models/AlbumMetadata'
+import { Dir, File, FileOrDir } from '../../src/models/FileOrDir'
 import { Future, List, Tuple } from '../../src/utils/fp'
 import { FsUtils } from '../../src/utils/FsUtils'
 import { s } from '../../src/utils/StringUtils'
 import { TagsUtils } from '../../src/utils/TagsUtils'
 
-const musicDir = path.resolve(__dirname, '../music')
-const mp3Dir = path.resolve(__dirname, '../resources/mp3')
+const musicDir = pipe(Dir.of(__dirname), Dir.joinDir('..', 'music'))
+const mp3Dir = pipe(Dir.of(__dirname), Dir.joinDir('..', 'resources', 'mp3'))
 
 describe('bcDl', () => {
   it('should get metadata', () =>
     pipe(
       getMetadata(httpGetMocked)({
-        musicLibraryDir: 'useless',
         url: 'https://inlustris.bandcamp.com/album/stella-splendens',
         genre: 'Dungeon Synth',
       }),
@@ -51,23 +49,25 @@ describe('bcDl (e2e)', () => {
   it('should e2e', () =>
     pipe(
       bcDl(
-        [musicDir, 'https://inlustris.bandcamp.com/album/stella-splendens', 'Dungeon Synth'],
+        ['test/music', 'https://inlustris.bandcamp.com/album/stella-splendens', 'Dungeon Synth'],
         httpGetMocked,
         httpGetBufferMocked,
         execYoutubeDlMocked,
       ),
       Future.chain(() => {
-        const albumDir = path.join(musicDir, 'Inlustris/[2020] Stella Splendens')
+        const albumDir = pipe(musicDir, Dir.joinDir('Inlustris', '[2020] Stella Splendens'))
         return pipe(
           FsUtils.readdir(albumDir),
           Future.chain(
             flow(
               List.map(f => {
-                const fName = path.join(albumDir, f.name)
+                expect(FileOrDir.isFile(f)).toStrictEqual(true)
+
+                const file = f as File
                 return pipe(
-                  TagsUtils.read(fName),
+                  TagsUtils.read(file),
                   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-                  Future.map(({ raw, ...tags }) => Tuple.of(f.name, tags)),
+                  Future.map(({ raw, ...tags }) => Tuple.of(file.basename, tags)),
                 )
               }),
               Future.sequenceArray,
@@ -216,11 +216,7 @@ const cleanMusicDir = (): Future<void> =>
     FsUtils.readdir(musicDir),
     Future.chain(
       flow(
-        List.map(f =>
-          f.isDirectory()
-            ? FsUtils.rmdir(path.join(musicDir, f.name), { recursive: true })
-            : Future.unit,
-        ),
+        List.map(f => (FileOrDir.isDir(f) ? FsUtils.rmdir(f, { recursive: true }) : Future.unit)),
         Future.sequenceArray,
       ),
     ),
@@ -230,7 +226,9 @@ const cleanMusicDir = (): Future<void> =>
 const httpGetMocked: HttpGet = url => {
   if (url === 'https://inlustris.bandcamp.com/album/stella-splendens') {
     return pipe(
-      FsUtils.readFile(path.resolve(__dirname, '../resources/stella-splendens.html')),
+      FsUtils.readFile(
+        pipe(Dir.of(__dirname), Dir.joinFile('..', 'resources', 'stella-splendens.html')),
+      ),
       Future.map(data => ({ status: 200, statusText: 'OK', headers: {}, config: {}, data })),
     )
   }
@@ -240,15 +238,17 @@ const httpGetMocked: HttpGet = url => {
 const execYoutubeDlMocked: ExecYoutubeDl = url => {
   if (url === 'https://inlustris.bandcamp.com/album/stella-splendens') {
     return pipe(
-      FsUtils.readdir(mp3Dir),
-      Future.chain(
-        flow(
-          List.map(f => {
-            const fName = path.join(mp3Dir, f.name)
-            return f.isDirectory()
-              ? Future.left(Error(s`Unexpected directory: ${fName}`))
-              : FsUtils.copyFile(fName, f.name)
-          }),
+      Future.Do,
+      Future.bind('mp3DirContent', () => FsUtils.readdir(mp3Dir)),
+      Future.bind('cwd', () => Future.fromIOEither(FsUtils.cwd())),
+      Future.chain(({ mp3DirContent, cwd }) =>
+        pipe(
+          mp3DirContent,
+          List.map(f =>
+            FileOrDir.isDir(f)
+              ? Future.left(Error(s`Unexpected directory: ${f.path}`))
+              : FsUtils.copyFile(f, pipe(cwd, Dir.joinFile(f.basename))),
+          ),
           Future.sequenceArray,
         ),
       ),
