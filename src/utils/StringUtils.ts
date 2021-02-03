@@ -34,16 +34,17 @@ export namespace StringUtils {
   export const almostEquals = (a: string, b: string): boolean =>
     sanitizeAlmost(a) === sanitizeAlmost(b)
 
-  const boringChars = /[_\/]/g
-  const sanitizeAlmost = (str: string): string =>
-    str.normalize().toLowerCase().replace(boringChars, '')
+  const whitespaces = /\s+/g
 
-  const whitespace = /\s+/g
+  const irrelevantChars = /[_\-/:]/g
+  const sanitizeAlmost = (str: string): string =>
+    str.normalize().toLowerCase().replace(irrelevantChars, '').replace(whitespaces, ' ')
+
   const weirdCharSometimesReturnedByBandcamp = new RegExp(s`${String.fromCharCode(8203)}+`, 'g')
   export const sanitize = (str: string): string =>
     str
       .trim()
-      .replace(whitespace, ' ')
+      .replace(whitespaces, ' ')
       .replace(weirdCharSometimesReturnedByBandcamp, '')
       .normalize()
 }
