@@ -2,6 +2,7 @@ import { flow, pipe } from 'fp-ts/function'
 
 import { bcDl } from '../../src/features/bcDl'
 import { ExecYoutubeDl, HttpGet, HttpGetBuffer, getMetadata } from '../../src/features/common'
+import { Album } from '../../src/models/Album'
 import { AlbumMetadata } from '../../src/models/AlbumMetadata'
 import { Dir, File, FileOrDir } from '../../src/models/FileOrDir'
 import { Genre } from '../../src/models/Genre'
@@ -24,7 +25,7 @@ describe('bcDl', () => {
       Future.map(result => {
         const expected: AlbumMetadata = {
           artist: 'Inlustris',
-          album: 'Stella Splendens',
+          album: Album.wrap('Stella Splendens'),
           year: 2020,
           genre: Genre.wrap('Dungeon Synth'),
           isEp: false,

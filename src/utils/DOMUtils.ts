@@ -23,6 +23,8 @@ export namespace DOMUtils {
     HTMLImageElement,
   } = window
 
+  export const documentFromHtml = (html: string): Document => new JSDOM(html).window.document
+
   export function querySelectorEnsureOne(
     selector: string,
   ): (parent: ParentNode) => Either<string, Element>
@@ -46,13 +48,17 @@ export namespace DOMUtils {
   }
 
   const whitespaceRegex = /\s+/g
+  const weirdCharSometimesReturnedByBandcamp = new RegExp(s`${String.fromCharCode(8203)}+`, 'g')
   export const parseText = (parent: ParentNode, selector: string): Either<string, string> =>
     pipe(
       parent,
       querySelectorEnsureOne(selector, HTMLElement),
       Either.chain(elt =>
         pipe(
-          elt.textContent?.trim().replace(whitespaceRegex, ' '),
+          elt.textContent
+            ?.trim()
+            .replace(whitespaceRegex, ' ')
+            .replace(weirdCharSometimesReturnedByBandcamp, ''),
           Either.fromNullable(s`No textContent for element: ${selector}`),
         ),
       ),

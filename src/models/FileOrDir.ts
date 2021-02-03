@@ -4,6 +4,7 @@ import nodePath from 'path'
 import { pipe } from 'fp-ts/function'
 
 import { IO, List } from '../utils/fp'
+import { s } from '../utils/StringUtils'
 
 export type FileOrDir = File | Dir
 
@@ -49,6 +50,9 @@ export namespace File {
 
   export const setBasename = (basename: string) => (file: File): File =>
     fromPath(nodePath.join(file.dirname, basename))
+
+  export const stringify = ({ path, basename, dirname }: File): string =>
+    s`File(${path}, ${basename}, ${dirname})`
 }
 
 export namespace Dir {

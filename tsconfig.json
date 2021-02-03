@@ -4,7 +4,6 @@
     "outDir": "./lib",
     "incremental": true,
     "noEmit": true,
-    "sourceMap": false,
     "noUnusedLocals": false,
     "noUnusedParameters": false
   },

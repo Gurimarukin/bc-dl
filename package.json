@@ -7,7 +7,11 @@
   "author": "Gurimarukin",
   "license": "MIT",
   "scripts": {
-    "dl": "ts-node src/dl.ts",
+    "build": "tsc -p ./tsconfig.build.json",
+    "dl": "node --unhandled-rejections=strict lib/dl.js",
+    "tag": "node --unhandled-rejections=strict lib/tag.js",
+    "ts-dl": "ts-node src/dl.ts",
+    "ts-tag": "ts-node src/tag.ts",
     "prettier": "prettier --check \"./{src,test}/**/*.ts\"",
     "prettier-fix": "prettier --write \"./{src,test}/**/*.ts\"",
     "import-sort": "import-sort --list-different \"./{src,test}/**/*.ts\"",

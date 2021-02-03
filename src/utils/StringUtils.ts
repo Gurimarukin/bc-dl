@@ -1,4 +1,4 @@
-import { not, pipe } from 'fp-ts/function'
+import { flow, not, pipe } from 'fp-ts/function'
 import { Newtype } from 'newtype-ts'
 
 import { List, Maybe } from './fp'
@@ -38,6 +38,9 @@ export namespace StringUtils {
     str: string,
   ): Maybe<A> => pipe(str.match(regex), Maybe.fromNullable, Maybe.chain(f))
 
+  export const matches = (regex: RegExp): ((str: string) => boolean) =>
+    flow(matcher(regex, Maybe.some), Maybe.isSome)
+
   export const matcher1 = (regex: RegExp): ((str: string) => Maybe<string>) =>
     matcher(regex, ([, a]) => Maybe.fromNullable(a))
 
@@ -45,4 +48,9 @@ export namespace StringUtils {
 
   const fileNameForbiddenChars = /[<>:"/\?\*\|\\]/g
   export const cleanFileName = (str: string): string => str.replace(fileNameForbiddenChars, '')
+
+  export const almostIncludes = (short: string) => (long: string): boolean =>
+    long.toLowerCase().includes(short.toLowerCase())
+
+  export const almostEquals = (a: string, b: string): boolean => a.toLowerCase() === b.toLowerCase()
 }

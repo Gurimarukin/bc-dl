@@ -1,22 +1,23 @@
-import { apply, eq } from 'fp-ts'
+import { apply } from 'fp-ts'
 import { flow, pipe } from 'fp-ts/function'
 import * as D from 'io-ts/Decoder'
 
 import { config } from '../config'
 import { DOMUtils } from '../utils/DOMUtils'
-import { Either, List, Maybe, NonEmptyArray } from '../utils/fp'
+import { Either, Maybe, NonEmptyArray, Tuple } from '../utils/fp'
 import { numberFromString } from '../utils/ioTsTypes'
 import { StringUtils, s } from '../utils/StringUtils'
+import { Album } from './Album'
 import { Genre } from './Genre'
 import { Url } from './Url'
 import { Validation } from './Validation'
 
 export type AlbumMetadata = {
   readonly artist: string
-  readonly album: string
+  readonly album: Album
+  readonly isEp: boolean
   readonly year: number
   readonly genre: Genre
-  readonly isEp: boolean
   readonly tracks: NonEmptyArray<AlbumMetadata.Track>
   readonly coverUrl: Url
 }
@@ -27,54 +28,54 @@ export namespace AlbumMetadata {
     readonly title: string
   }
 
+  export namespace Track {
+    export const stringify = (track: Track): string =>
+      s`Track(${StringUtils.padNumber(track.number)}, ${track.title})`
+  }
+
   export const fromDocument = (genre: Genre) => (
     document: DOMUtils.Document,
-  ): Either<NonEmptyArray<string>, AlbumMetadata> => {
-    const eitherArtist = lift('artist')(DOMUtils.parseText(document, '#name-section a'))
-    return pipe(
+  ): Either<NonEmptyArray<string>, AlbumMetadata> =>
+    pipe(
       apply.sequenceT(Validation.validation)(
-        eitherArtist,
-        lift('album')(DOMUtils.parseText(document, '#name-section > h2.trackTitle')),
+        lift('artist')(DOMUtils.parseText(document, '#name-section a')),
+        parseAlbum(document),
         parseYear(document),
-        parseIsEp(eitherArtist),
         parseTracks(document),
         parseCoverUrl(document),
       ),
-      Either.map(([artist, album, year, isEp, tracks, coverUrl]) => ({
+      Either.map(([artist, [album, isEp], year, tracks, coverUrl]) => ({
         artist,
         album,
+        isEp,
         year,
         genre,
-        isEp,
         tracks,
         coverUrl,
       })),
     )
+
+  const parseAlbum = (document: DOMUtils.Document): Validation<Tuple<Album, boolean>> => {
+    const album = pipe(DOMUtils.parseText(document, '#name-section > h2.trackTitle'), lift('album'))
+    const isEp = pipe(
+      album,
+      Either.fold(() => false, StringUtils.matches(config.epRegex)),
+    )
+    return pipe(album, Either.map(flow(Album.wrap, a => [isEp ? Album.withoutEp(a) : a, isEp])))
   }
 
-  const yearRegex = /\D(\d{4})/
   const parseYear = (document: DOMUtils.Document): Validation<number> =>
     pipe(
       DOMUtils.parseText(document, '#trackInfoInner .tralbumData.tralbum-credits'),
       Either.chain(str =>
         pipe(
           str,
-          StringUtils.matcher1(yearRegex),
+          StringUtils.matcher1(config.yearRegex),
           Maybe.chain(flow(numberFromString.decode, Maybe.fromEither)),
           Either.fromOption(() => s`Could't find year in string: "${str}"`),
         ),
       ),
       lift('year'),
-    )
-
-  const parseIsEp = (album: Validation<string>): Either<never, boolean> =>
-    pipe(
-      album,
-      Either.fold(
-        () => false,
-        str => pipe(config.epStrings, List.elem(eq.eqString)(str)),
-      ),
-      Either.right,
     )
 
   const parseTracks = (document: DOMUtils.Document): Validation<NonEmptyArray<Track>> => {
@@ -131,4 +132,18 @@ export namespace AlbumMetadata {
       e,
       Either.mapLeft(err => NonEmptyArray.of(s`Failed to decode ${name}: ${err}`)),
     )
+
+  export const stringify = ({
+    artist,
+    album,
+    year,
+    genre,
+    isEp,
+    tracks,
+    coverUrl,
+  }: AlbumMetadata): string =>
+    s`AlbumMetadata(${artist}, ${album}, ${year}, ${genre}, ${isEp}, ${pipe(
+      tracks,
+      NonEmptyArray.stringify(Track.stringify),
+    )}, ${coverUrl})`
 }

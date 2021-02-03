@@ -10,11 +10,14 @@ import {
   task,
   taskEither,
 } from 'fp-ts'
-import { Lazy, pipe } from 'fp-ts/function'
+import { Lazy, flow, pipe } from 'fp-ts/function'
 import { Kind, Kind2, URIS, URIS2 } from 'fp-ts/HKT'
 import { Monad1, Monad2 } from 'fp-ts/Monad'
 import * as C from 'io-ts/Codec'
 import * as D from 'io-ts/Decoder'
+import { Encoder } from 'io-ts/Encoder'
+
+import { StringUtils } from './StringUtils'
 
 export const todo = (...[]: List<unknown>): never => {
   // eslint-disable-next-line functional/no-throw-statement
@@ -42,16 +45,22 @@ export const Maybe = {
 }
 
 export type NonEmptyArray<A> = readonlyNonEmptyArray.ReadonlyNonEmptyArray<A>
+const neaDecoder = <A>(codec: D.Decoder<unknown, A>): D.Decoder<unknown, NonEmptyArray<A>> =>
+  pipe(D.array(codec), D.refine<List<A>, NonEmptyArray<A>>(List.isNonEmpty, 'NonEmptyArray'))
+const neaEncoder = <O, A>(codec: Encoder<O, A>): Encoder<NonEmptyArray<O>, NonEmptyArray<A>> => ({
+  encode: a => pipe(a, NonEmptyArray.map(codec.encode)),
+})
 export const NonEmptyArray = {
   ...readonlyNonEmptyArray,
+  stringify: <A>(str: (a: A) => string): ((nea: NonEmptyArray<A>) => string) =>
+    flow(readonlyNonEmptyArray.map(str), StringUtils.mkString('NonEmptyArray(', ', ', ')')),
   do: getDo1(readonlyNonEmptyArray.readonlyNonEmptyArray),
+  decoder: neaDecoder,
+  encoder: neaEncoder,
   codec: <O, A>(
     codec: C.Codec<unknown, O, A>,
   ): C.Codec<unknown, NonEmptyArray<O>, NonEmptyArray<A>> =>
-    C.make(
-      pipe(D.array(codec), D.refine<List<A>, NonEmptyArray<A>>(List.isNonEmpty, 'NonEmptyArray')),
-      { encode: a => pipe(a, NonEmptyArray.map(codec.encode)) },
-    ),
+    C.make(neaDecoder(codec), neaEncoder(codec)),
 }
 
 // can't just alias it to `Array`

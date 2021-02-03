@@ -1,6 +1,5 @@
 import { flow, pipe } from 'fp-ts/function'
 
-import { config } from '../config'
 import { AlbumMetadata } from '../models/AlbumMetadata'
 import { Dir, File, FileOrDir } from '../models/FileOrDir'
 import { FileWithTrack } from '../models/FileWithTrack'
@@ -16,11 +15,13 @@ import {
   HttpGet,
   HttpGetBuffer,
   downloadCover,
-  ensureAlbumDirectory,
+  ensureAlbumDir,
+  getAlbumDir,
   getMetadata,
+  getWriteTagsAction,
+  isMp3File,
   log,
   parseCommand,
-  trackMatchesFile,
   writeTagsAndMoveFile,
 } from './common'
 
@@ -61,7 +62,8 @@ const downloadAlbum = (
     Future.bind('cover', ({ metadata }) => downloadCover(httpGetBuffer)(metadata.coverUrl)),
 
     log(s`>>> [${url}] Downloading album`),
-    Future.bind('albumDir', ({ metadata }) => ensureAlbumDirectory(musicLibraryDir, metadata)),
+    Future.bind('albumDir', ({ metadata }) => Future.right(getAlbumDir(musicLibraryDir, metadata))),
+    Future.do(({ albumDir }) => ensureAlbumDir(albumDir)),
     Future.do(({ albumDir }) => Future.fromIOEither(FsUtils.chdir(albumDir))),
     Future.do(() => execYoutubeDl(url)),
 
@@ -82,7 +84,15 @@ const writeAllTags = (
   pipe(
     zipMp3FilesWithMetadata(mp3Files, metadata.tracks),
     Future.chain(
-      flow(List.map(writeTagsAndMoveFile(url, albumDir, metadata, cover)), Future.sequenceArray),
+      flow(
+        List.map(([file, track]) =>
+          pipe(
+            getWriteTagsAction(url, albumDir, metadata, cover, file, track),
+            writeTagsAndMoveFile,
+          ),
+        ),
+        Future.sequenceArray,
+      ),
     ),
     Future.map(() => {}),
   )
@@ -102,7 +112,7 @@ const getDownloadedMp3Files = (albumDir: Dir): Future<NonEmptyArray<File>> =>
           if (FileOrDir.isDir(f)) {
             return Either.left(NonEmptyArray.of(s`Unexpected directory: ${f.path}`))
           }
-          if (!f.basename.endsWith(config.mp3Extension)) {
+          if (!isMp3File(f)) {
             return Either.left(NonEmptyArray.of(s`Non mp3 file: ${f.path}`))
           }
           return Either.right(f)
@@ -124,7 +134,7 @@ const zipMp3FilesWithMetadata = (
     NonEmptyArray.traverse(Validation.applicativeValidation)(file =>
       pipe(
         tracks,
-        List.findFirst(track => trackMatchesFile(track, file)),
+        List.findFirst(trackMatchesFile(file)),
         Maybe.fold(
           () =>
             Either.left(
@@ -139,3 +149,6 @@ const zipMp3FilesWithMetadata = (
     ),
     Future.fromEither,
   )
+
+const trackMatchesFile = (file: File) => (track: AlbumMetadata.Track): boolean =>
+  pipe(file.basename, StringUtils.almostIncludes(track.title))

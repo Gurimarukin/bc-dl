@@ -1,17 +1,18 @@
 import { AxiosResponse } from 'axios'
 import { Command, Opts, codecToDecode } from 'decline-ts'
 import { apply } from 'fp-ts'
-import { pipe } from 'fp-ts/function'
-import { JSDOM } from 'jsdom'
+import { identity, not, pipe } from 'fp-ts/function'
 import NodeID3 from 'node-id3'
 
 import { config } from '../config'
+import { Album } from '../models/Album'
 import { AlbumMetadata } from '../models/AlbumMetadata'
 import { Dir, File } from '../models/FileOrDir'
-import { FileWithTrack } from '../models/FileWithTrack'
 import { Genre } from '../models/Genre'
 import { Url } from '../models/Url'
+import { WriteTagsAction } from '../models/WriteTagsAction'
 import { Console } from '../utils/Console'
+import { DOMUtils } from '../utils/DOMUtils'
 import { Either, Future, List, Maybe, NonEmptyArray } from '../utils/fp'
 import { FsUtils } from '../utils/FsUtils'
 import { StringUtils, s } from '../utils/StringUtils'
@@ -91,7 +92,7 @@ export const getMetadata = (httpGet: HttpGet) => (genre: Genre, url: Url): Futur
     httpGet(url),
     Future.chain(({ data }) =>
       pipe(
-        new JSDOM(data).window.document,
+        DOMUtils.documentFromHtml(data),
         AlbumMetadata.fromDocument(genre),
         Either.mapLeft(e =>
           Error(s`Errors while parsing AlbumMetadata:\n${pipe(e, StringUtils.mkString('\n'))}`),
@@ -107,51 +108,48 @@ export const downloadCover = (httpGetBuffer: HttpGetBuffer) => (coverUrl: Url): 
     Future.map(res => res.data),
   )
 
-export const ensureAlbumDirectory = (
-  musicLibraryDir: Dir,
-  metadata: AlbumMetadata,
-): Future<Dir> => {
-  const albumDir = pipe(
+export const getAlbumDir = (musicLibraryDir: Dir, metadata: AlbumMetadata): Dir =>
+  pipe(
     musicLibraryDir,
     Dir.joinDir(
       metadata.artist,
       s`[${metadata.year}] ${metadata.album}${metadata.isEp ? ' (EP)' : ''}`,
     ),
   )
-  return pipe(
-    FsUtils.exists(albumDir),
-    Future.chain(dirExists =>
-      dirExists
-        ? Future.left(
-            Error(s`Album directory already exists, this might be an error: ${albumDir.path}`),
-          )
-        : FsUtils.mkdir(albumDir, { recursive: true }),
-    ),
-    Future.map(() => albumDir),
-  )
-}
 
-export const writeTagsAndMoveFile = (
+export const ensureAlbumDir = (albumDir: Dir): Future<void> =>
+  pipe(
+    FsUtils.exists(albumDir),
+    Future.filterOrElse(not(identity), () =>
+      Error(s`Album directory already exists, this might be an error: ${albumDir.path}`),
+    ),
+    Future.chain(() => FsUtils.mkdir(albumDir, { recursive: true })),
+  )
+
+export const getWriteTagsAction = (
   url: Url,
   albumDir: Dir,
   metadata: AlbumMetadata,
   cover: Buffer,
-) => ([file, track]: FileWithTrack): Future<void> =>
-  pipe(
-    TagsUtils.write(getTags(url, metadata, cover, track), file),
-    Future.chain(() =>
-      FsUtils.rename(
-        file,
-        pipe(
-          albumDir,
-          Dir.joinFile(
-            s`${StringUtils.padNumber(track.number)} - ${StringUtils.cleanFileName(track.title)}${
-              config.mp3Extension
-            }`,
-          ),
-        ),
-      ),
+  file: File,
+  track: AlbumMetadata.Track,
+): WriteTagsAction => ({
+  file,
+  newTags: getTags(url, metadata, cover, track),
+  renameTo: pipe(
+    albumDir,
+    Dir.joinFile(
+      s`${StringUtils.padNumber(track.number)} - ${StringUtils.cleanFileName(track.title)}${
+        config.mp3Extension
+      }`,
     ),
+  ),
+})
+
+export const writeTagsAndMoveFile = ({ file, newTags, renameTo }: WriteTagsAction): Future<void> =>
+  pipe(
+    TagsUtils.write(newTags, file),
+    Future.chain(() => FsUtils.rename(file, renameTo)),
   )
 
 const getTags = (
@@ -162,7 +160,7 @@ const getTags = (
 ): NodeID3.Tags => ({
   title: track.title,
   artist: metadata.artist,
-  album: metadata.album,
+  album: Album.unwrap(metadata.album),
   year: s`${metadata.year}`,
   trackNumber: s`${track.number}`,
   genre: Genre.unwrap(metadata.genre),
@@ -176,8 +174,8 @@ const getTags = (
   },
 })
 
-export const trackMatchesFile = (track: AlbumMetadata.Track, file: File): boolean =>
-  file.basename.toLowerCase().includes(track.title.toLowerCase())
+export const isMp3File = (file: File): boolean =>
+  file.basename.toLowerCase().endsWith(config.mp3Extension)
 
 export const log = (
   message?: unknown,
