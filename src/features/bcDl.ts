@@ -43,7 +43,7 @@ export const bcDl = (
         NonEmptyArray.map(
           downloadAlbum(httpGet, httpGetBuffer, execYoutubeDl)(args.musicLibraryDir, args.genre),
         ),
-        Future.sequenceArray,
+        Future.sequenceSeqArray,
       ),
     ),
     Future.map(() => {}),
