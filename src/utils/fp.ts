@@ -16,8 +16,7 @@ import { Monad1, Monad2 } from 'fp-ts/Monad'
 import * as C from 'io-ts/Codec'
 import * as D from 'io-ts/Decoder'
 import { Encoder } from 'io-ts/Encoder'
-
-import { StringUtils } from './StringUtils'
+import { Newtype } from 'newtype-ts'
 
 export const todo = (...[]: List<unknown>): never => {
   // eslint-disable-next-line functional/no-throw-statement
@@ -53,7 +52,7 @@ const neaEncoder = <O, A>(codec: Encoder<O, A>): Encoder<NonEmptyArray<O>, NonEm
 export const NonEmptyArray = {
   ...readonlyNonEmptyArray,
   stringify: <A>(str: (a: A) => string): ((nea: NonEmptyArray<A>) => string) =>
-    flow(readonlyNonEmptyArray.map(str), StringUtils.mkString('NonEmptyArray(', ', ', ')')),
+    flow(readonlyNonEmptyArray.map(str), mkString_('NonEmptyArray(', ', ', ')')),
   do: getDo1(readonlyNonEmptyArray.readonlyNonEmptyArray),
   decoder: neaDecoder,
   encoder: neaEncoder,
@@ -137,4 +136,32 @@ function getDo1<F extends URIS>(m: Monad1<F>) {
 function getDo2<F extends URIS2>(m: Monad2<F>) {
   return <E, A>(f: (a: A) => Kind2<F, E, void>) => (fa: Kind2<F, E, A>): Kind2<F, E, A> =>
     m.chain(fa, a => m.map(f(a), () => a))
+}
+
+/**
+ * StringUtils, but we have to avoid cyclic dependency :/
+ */
+
+type NiceStringDefault = string | number | boolean | undefined | null
+type NiceString = NiceStringDefault | Newtype<unknown, NiceStringDefault>
+
+// interpolates.length is always strings.length - 1
+export const s_ = (strings: TemplateStringsArray, ...interpolates: List<NiceString>): string =>
+  pipe(
+    strings,
+    List.zip(List.snoc(interpolates, '')),
+    List.reduce('', (acc, [a, b]) => `${acc}${a}${b}`),
+  )
+
+export function mkString_(sep: string): (list: List<string>) => string
+export function mkString_(start: string, sep: string, end: string): (list: List<string>) => string
+export function mkString_(
+  startOrSep: string,
+  sep?: string,
+  end?: string,
+): (list: List<string>) => string {
+  return list =>
+    sep !== undefined && end !== undefined
+      ? s_`${startOrSep}${list.join(sep)}${end}`
+      : list.join(startOrSep)
 }

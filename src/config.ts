@@ -8,5 +8,4 @@ export const config = {
   epRegex: /E\s*\.?\s*P\s*\.?/g,
   yearRegex: /\D(\d{4})/,
   jpgExtension: ['.jpg', '.jpeg'],
-  whitespaceRegex: /\s+/g,
 }

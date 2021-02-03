@@ -65,12 +65,7 @@ export namespace AlbumMetadata {
       album,
       Either.map(
         flow(Album.wrap, a => [
-          isEp
-            ? pipe(
-                Album.withoutEp(a),
-                Album.modify(_ => _.trim().replace(config.whitespaceRegex, ' ')),
-              )
-            : a,
+          isEp ? pipe(Album.withoutEp(a), Album.modify(StringUtils.sanitize)) : a,
           isEp,
         ]),
       ),

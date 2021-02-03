@@ -140,11 +140,9 @@ const getAction = (albumDir: Dir, metadata: AlbumMetadata, cover: Buffer) => (
   pipe(
     metadata.tracks,
     List.findFirst(trackMatchesFile(file)),
-    Either.fromOption(() => NonEmptyArray.of(noMatchError(file))),
+    Either.fromOption(() => NonEmptyArray.of(file.path)),
     Either.map(track => getWriteTagsAction(albumDir, metadata, cover, file, track)),
   )
-
-const noMatchError = (file: File): string => s`Couldn't find track matching file: ${file.path}`
 
 const trackMatchesFile = (file: File) => (track: AlbumMetadata.Track): boolean =>
   pipe(file.basename, StringUtils.almostIncludes(track.title))

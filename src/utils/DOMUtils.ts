@@ -1,9 +1,8 @@
 import { not, pipe } from 'fp-ts/function'
 import { DOMWindow, JSDOM } from 'jsdom'
 
-import { config } from '../config'
 import { Either } from './fp'
-import { s } from './StringUtils'
+import { StringUtils, s } from './StringUtils'
 
 const { window } = new JSDOM()
 
@@ -48,18 +47,15 @@ export namespace DOMUtils {
     }
   }
 
-  const weirdCharSometimesReturnedByBandcamp = new RegExp(s`${String.fromCharCode(8203)}+`, 'g')
   export const parseText = (parent: ParentNode, selector: string): Either<string, string> =>
     pipe(
       parent,
       querySelectorEnsureOne(selector, HTMLElement),
       Either.chain(elt =>
         pipe(
-          elt.textContent
-            ?.trim()
-            .replace(config.whitespaceRegex, ' ')
-            .replace(weirdCharSometimesReturnedByBandcamp, ''),
+          elt.textContent,
           Either.fromNullable(s`No textContent for element: ${selector}`),
+          Either.map(StringUtils.sanitize),
         ),
       ),
       Either.filterOrElse(

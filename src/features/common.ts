@@ -140,7 +140,9 @@ export const rmrfAlbumDirOnError = (url: Url) => <A extends AlbumDir, B>(
         f(a),
         Future.recover(e =>
           pipe(
-            Future.fromIOEither(Console.log(s`>>> [${url}] Removing albumDir: ${a.albumDir.path}`)),
+            Future.fromIOEither(
+              Console.log(s`>>> [${url}] Error - removing albumDir: ${a.albumDir.path}`),
+            ),
             Future.chain(() => FsUtils.rmrf(a.albumDir)),
             Future.chain(() => Future.left(e)),
           ),

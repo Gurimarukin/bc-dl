@@ -1,18 +1,8 @@
 import { flow, not, pipe } from 'fp-ts/function'
-import { Newtype } from 'newtype-ts'
 
-import { List, Maybe } from './fp'
+import { Maybe, mkString_, s_ } from './fp'
 
-type NiceStringDefault = string | number | boolean | undefined | null
-type NiceString = NiceStringDefault | Newtype<unknown, NiceStringDefault>
-
-// interpolates.length is always strings.length - 1
-export const s = (strings: TemplateStringsArray, ...interpolates: List<NiceString>): string =>
-  pipe(
-    strings,
-    List.zip(List.snoc(interpolates, '')),
-    List.reduce('', (acc, [a, b]) => `${acc}${a}${b}`),
-  )
+export const s = s_
 
 export namespace StringUtils {
   export const isEmpty = (str: string): str is '' => str === ''
@@ -21,18 +11,7 @@ export namespace StringUtils {
   const margin = /^[^\n\S]*\|/gm
   export const stripMargins = (str: string): string => str.replace(margin, '')
 
-  export function mkString(sep: string): (list: List<string>) => string
-  export function mkString(start: string, sep: string, end: string): (list: List<string>) => string
-  export function mkString(
-    startOrSep: string,
-    sep?: string,
-    end?: string,
-  ): (list: List<string>) => string {
-    return list =>
-      sep !== undefined && end !== undefined
-        ? s`${startOrSep}${list.join(sep)}${end}`
-        : list.join(startOrSep)
-  }
+  export const mkString = mkString_
 
   const matcher = <A>(regex: RegExp, f: (arr: RegExpMatchArray) => Maybe<A>) => (
     str: string,
@@ -50,7 +29,17 @@ export namespace StringUtils {
   export const cleanFileName = (str: string): string => str.replace(fileNameForbiddenChars, '')
 
   export const almostIncludes = (short: string) => (long: string): boolean =>
-    long.toLowerCase().includes(short.toLowerCase())
+    long.normalize().toLowerCase().includes(short.normalize().toLowerCase())
 
-  export const almostEquals = (a: string, b: string): boolean => a.toLowerCase() === b.toLowerCase()
+  export const almostEquals = (a: string, b: string): boolean =>
+    a.normalize().toLowerCase() === b.normalize().toLowerCase()
+
+  const whitespace = /\s+/g
+  const weirdCharSometimesReturnedByBandcamp = new RegExp(s`${String.fromCharCode(8203)}+`, 'g')
+  export const sanitize = (str: string): string =>
+    str
+      .trim()
+      .replace(whitespace, ' ')
+      .replace(weirdCharSometimesReturnedByBandcamp, '')
+      .normalize()
 }
