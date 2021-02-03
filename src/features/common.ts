@@ -164,10 +164,10 @@ const getTags = (
   year: s`${metadata.year}`,
   trackNumber: s`${track.number}`,
   genre: Genre.unwrap(metadata.genre),
-  comment: { language: '', text: Url.unwrap(url) },
+  comment: { language: 'eng', text: Url.unwrap(url) },
   performerInfo: metadata.artist,
   image: {
-    mime: 'jpeg',
+    mime: 'image/jpeg',
     type: { id: 3, name: 'front cover' },
     description: '',
     imageBuffer: cover,
