@@ -164,7 +164,7 @@ const getTags = (
   year: s`${metadata.year}`,
   trackNumber: s`${track.number}`,
   genre: Genre.unwrap(metadata.genre),
-  comment: { language: 'eng', text: Url.unwrap(url) },
+  // comment: { language: 'eng', text: Url.unwrap(url) }, // seems bugged
   performerInfo: metadata.artist,
   image: {
     mime: 'image/jpeg',
