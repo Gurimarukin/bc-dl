@@ -2,11 +2,11 @@ import { flow, pipe } from 'fp-ts/function'
 
 import { AlbumMetadata } from '../models/AlbumMetadata'
 import { Dir, File, FileOrDir } from '../models/FileOrDir'
-import { FileWithTrack } from '../models/FileWithTrack'
 import { Genre } from '../models/Genre'
 import { Url } from '../models/Url'
 import { Validation } from '../models/Validation'
-import { Either, Future, List, Maybe, NonEmptyArray, Tuple } from '../utils/fp'
+import { WriteTagsAction } from '../models/WriteTagsAction'
+import { Either, Future, List, NonEmptyArray } from '../utils/fp'
 import { FsUtils } from '../utils/FsUtils'
 import { StringUtils, s } from '../utils/StringUtils'
 import {
@@ -22,7 +22,9 @@ import {
   isMp3File,
   log,
   parseCommand,
-  writeTagsAndMoveFile,
+  prettyTrackInfo,
+  rmrfAlbumDirOnError,
+  writeAllTags,
 } from './common'
 
 const cmd = CmdArgs.of('bc-dl', 'youtube-dl for Bandcamp, with mp3 tags')
@@ -64,37 +66,17 @@ const downloadAlbum = (
     log(s`>>> [${url}] Downloading album`),
     Future.bind('albumDir', ({ metadata }) => Future.right(getAlbumDir(musicLibraryDir, metadata))),
     Future.do(({ albumDir }) => ensureAlbumDir(albumDir)),
-    Future.do(({ albumDir }) => Future.fromIOEither(FsUtils.chdir(albumDir))),
-    Future.do(() => execYoutubeDl(url)),
+    rmrfAlbumDirOnError(url)(({ metadata, cover, albumDir }) =>
+      pipe(
+        Future.fromIOEither(FsUtils.chdir(albumDir)),
+        Future.chain(() => execYoutubeDl(url)),
 
-    log(s`>>> [${url}] Writing tags and renaming files`),
-    Future.bind('mp3files', ({ albumDir }) => getDownloadedMp3Files(albumDir)),
-    Future.chain(({ metadata, cover, albumDir, mp3files }) =>
-      writeAllTags(url, albumDir, mp3files, metadata, cover),
-    ),
-  )
-
-const writeAllTags = (
-  url: Url,
-  albumDir: Dir,
-  mp3Files: NonEmptyArray<File>,
-  metadata: AlbumMetadata,
-  cover: Buffer,
-): Future<void> =>
-  pipe(
-    zipMp3FilesWithMetadata(mp3Files, metadata.tracks),
-    Future.chain(
-      flow(
-        List.map(([file, track]) =>
-          pipe(
-            getWriteTagsAction(url, albumDir, metadata, cover, file, track),
-            writeTagsAndMoveFile,
-          ),
-        ),
-        Future.sequenceArray,
+        log(s`>>> [${url}] Writing tags and renaming files`),
+        Future.chain(() => getDownloadedMp3Files(albumDir)),
+        Future.chain(mp3Files => getActions(mp3Files, albumDir, metadata, cover)),
+        Future.chain(writeAllTags),
       ),
     ),
-    Future.map(() => {}),
   )
 
 const getDownloadedMp3Files = (albumDir: Dir): Future<NonEmptyArray<File>> =>
@@ -125,30 +107,44 @@ const getDownloadedMp3Files = (albumDir: Dir): Future<NonEmptyArray<File>> =>
     ),
   )
 
-const zipMp3FilesWithMetadata = (
+const getActions = (
   mp3Files: NonEmptyArray<File>,
-  tracks: NonEmptyArray<AlbumMetadata.Track>,
-): Future<NonEmptyArray<FileWithTrack>> =>
+  albumDir: Dir,
+  metadata: AlbumMetadata,
+  cover: Buffer,
+): Future<NonEmptyArray<WriteTagsAction>> =>
   pipe(
     mp3Files,
-    NonEmptyArray.traverse(Validation.applicativeValidation)(file =>
-      pipe(
-        tracks,
-        List.findFirst(trackMatchesFile(file)),
-        Maybe.fold(
-          () =>
-            Either.left(
-              NonEmptyArray.of(s`Couldn't find track metadata matching file: ${file.basename}`),
-            ),
-          track => Either.right(Tuple.of(file, track)),
+    NonEmptyArray.traverse(Validation.applicativeValidation)(getAction(albumDir, metadata, cover)),
+    Either.mapLeft(errors =>
+      Error(
+        StringUtils.stripMargins(
+          s`Failed to find track for files:
+           |${pipe(errors, StringUtils.mkString('\n'))}
+           |
+           |Considered tracks:
+           |${pipe(
+             metadata.tracks,
+             NonEmptyArray.map(prettyTrackInfo(metadata)),
+             StringUtils.mkString('\n'),
+           )}`,
         ),
       ),
     ),
-    Either.mapLeft(e =>
-      Error(s`Errors while zipping files with tracks:\n${pipe(e, StringUtils.mkString('\n'))}`),
-    ),
     Future.fromEither,
   )
+
+const getAction = (albumDir: Dir, metadata: AlbumMetadata, cover: Buffer) => (
+  file: File,
+): Validation<WriteTagsAction> =>
+  pipe(
+    metadata.tracks,
+    List.findFirst(trackMatchesFile(file)),
+    Either.fromOption(() => NonEmptyArray.of(noMatchError(file))),
+    Either.map(track => getWriteTagsAction(albumDir, metadata, cover, file, track)),
+  )
+
+const noMatchError = (file: File): string => s`Couldn't find track matching file: ${file.path}`
 
 const trackMatchesFile = (file: File) => (track: AlbumMetadata.Track): boolean =>
   pipe(file.basename, StringUtils.almostIncludes(track.title))

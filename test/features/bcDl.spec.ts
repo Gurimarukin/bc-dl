@@ -81,11 +81,6 @@ describe('bcDl (e2e)', () => {
       }),
       Future.map(result => {
         const imageBuffer = Buffer.from('Image Buffer', 'utf-8')
-        const comment = {
-          language: 'ÿþ',
-          shortText: undefined,
-          text: 'ÿ﹨ttps://inlustris.bandcamp.com/album/stella-splendens',
-        }
 
         expect(result).toStrictEqual([
           [
@@ -93,7 +88,6 @@ describe('bcDl (e2e)', () => {
             {
               album: 'Stella Splendens',
               artist: 'Inlustris',
-              comment,
               genre: 'Dungeon Synth',
               image: {
                 description: undefined,
@@ -112,7 +106,6 @@ describe('bcDl (e2e)', () => {
             {
               album: 'Stella Splendens',
               artist: 'Inlustris',
-              comment,
               genre: 'Dungeon Synth',
               image: {
                 description: undefined,
@@ -131,7 +124,6 @@ describe('bcDl (e2e)', () => {
             {
               album: 'Stella Splendens',
               artist: 'Inlustris',
-              comment,
               genre: 'Dungeon Synth',
               image: {
                 description: undefined,
@@ -150,7 +142,6 @@ describe('bcDl (e2e)', () => {
             {
               album: 'Stella Splendens',
               artist: 'Inlustris',
-              comment,
               genre: 'Dungeon Synth',
               image: {
                 description: undefined,
@@ -169,7 +160,6 @@ describe('bcDl (e2e)', () => {
             {
               album: 'Stella Splendens',
               artist: 'Inlustris',
-              comment,
               genre: 'Dungeon Synth',
               image: {
                 description: undefined,
@@ -188,7 +178,6 @@ describe('bcDl (e2e)', () => {
             {
               album: 'Stella Splendens',
               artist: 'Inlustris',
-              comment,
               genre: 'Dungeon Synth',
               image: {
                 description: undefined,
@@ -207,7 +196,6 @@ describe('bcDl (e2e)', () => {
             {
               album: 'Stella Splendens',
               artist: 'Inlustris',
-              comment,
               genre: 'Dungeon Synth',
               image: {
                 description: undefined,

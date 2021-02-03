@@ -1,6 +1,7 @@
 import { not, pipe } from 'fp-ts/function'
 import { DOMWindow, JSDOM } from 'jsdom'
 
+import { config } from '../config'
 import { Either } from './fp'
 import { s } from './StringUtils'
 
@@ -47,7 +48,6 @@ export namespace DOMUtils {
     }
   }
 
-  const whitespaceRegex = /\s+/g
   const weirdCharSometimesReturnedByBandcamp = new RegExp(s`${String.fromCharCode(8203)}+`, 'g')
   export const parseText = (parent: ParentNode, selector: string): Either<string, string> =>
     pipe(
@@ -57,7 +57,7 @@ export namespace DOMUtils {
         pipe(
           elt.textContent
             ?.trim()
-            .replace(whitespaceRegex, ' ')
+            .replace(config.whitespaceRegex, ' ')
             .replace(weirdCharSometimesReturnedByBandcamp, ''),
           Either.fromNullable(s`No textContent for element: ${selector}`),
         ),

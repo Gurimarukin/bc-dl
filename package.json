@@ -25,6 +25,7 @@
   "devDependencies": {
     "@type-config/strict": "^1.1.1",
     "@types/jest": "^26.0.20",
+    "@types/rimraf": "^3.0.0",
     "@typescript-eslint/eslint-plugin": "^4.14.1",
     "@typescript-eslint/parser": "^4.14.1",
     "axios": "^0.21.1",
@@ -45,6 +46,7 @@
     "newtype-ts": "^0.3.4",
     "node-id3": "^0.2.2",
     "prettier": "^2.2.1",
+    "rimraf": "^3.0.2",
     "ts-jest": "^26.5.0",
     "ts-node": "^9.1.1",
     "typescript": "^4.1.3"

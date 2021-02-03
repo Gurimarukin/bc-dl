@@ -61,7 +61,20 @@ export namespace AlbumMetadata {
       album,
       Either.fold(() => false, StringUtils.matches(config.epRegex)),
     )
-    return pipe(album, Either.map(flow(Album.wrap, a => [isEp ? Album.withoutEp(a) : a, isEp])))
+    return pipe(
+      album,
+      Either.map(
+        flow(Album.wrap, a => [
+          isEp
+            ? pipe(
+                Album.withoutEp(a),
+                Album.modify(_ => _.trim().replace(config.whitespaceRegex, ' ')),
+              )
+            : a,
+          isEp,
+        ]),
+      ),
+    )
   }
 
   const parseYear = (document: DOMUtils.Document): Validation<number> =>

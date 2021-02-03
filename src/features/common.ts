@@ -126,8 +126,31 @@ export const ensureAlbumDir = (albumDir: Dir): Future<void> =>
     Future.chain(() => FsUtils.mkdir(albumDir, { recursive: true })),
   )
 
+type AlbumDir = {
+  readonly albumDir: Dir
+}
+
+export const rmrfAlbumDirOnError = (url: Url) => <A extends AlbumDir, B>(
+  f: (a: A) => Future<B>,
+) => (fa: Future<A>): Future<B> =>
+  pipe(
+    fa,
+    Future.chain(a =>
+      pipe(
+        f(a),
+        Future.recover(e =>
+          pipe(
+            Future.fromIOEither(Console.log(s`>>> [${url}] Removing albumDir: ${a.albumDir.path}`)),
+            Future.chain(() => FsUtils.rmrf(a.albumDir)),
+            Future.chain(() => Future.left(e)),
+          ),
+        ),
+      ),
+    ),
+  )
+
 export const getWriteTagsAction = (
-  url: Url,
+  // url: Url,
   albumDir: Dir,
   metadata: AlbumMetadata,
   cover: Buffer,
@@ -135,7 +158,7 @@ export const getWriteTagsAction = (
   track: AlbumMetadata.Track,
 ): WriteTagsAction => ({
   file,
-  newTags: getTags(url, metadata, cover, track),
+  newTags: getTags(metadata, cover, track),
   renameTo: pipe(
     albumDir,
     Dir.joinFile(
@@ -146,14 +169,8 @@ export const getWriteTagsAction = (
   ),
 })
 
-export const writeTagsAndMoveFile = ({ file, newTags, renameTo }: WriteTagsAction): Future<void> =>
-  pipe(
-    TagsUtils.write(newTags, file),
-    Future.chain(() => FsUtils.rename(file, renameTo)),
-  )
-
 const getTags = (
-  url: Url,
+  // url: Url,
   metadata: AlbumMetadata,
   cover: Buffer,
   track: AlbumMetadata.Track,
@@ -174,8 +191,25 @@ const getTags = (
   },
 })
 
+export const writeAllTags = (actions: NonEmptyArray<WriteTagsAction>): Future<void> =>
+  pipe(
+    actions,
+    NonEmptyArray.map(writeTagsAndMoveFile),
+    Future.sequenceArray,
+    Future.map(() => {}),
+  )
+
+const writeTagsAndMoveFile = ({ file, newTags, renameTo }: WriteTagsAction): Future<void> =>
+  pipe(
+    TagsUtils.write(newTags, file),
+    Future.chain(() => FsUtils.rename(file, renameTo)),
+  )
+
 export const isMp3File = (file: File): boolean =>
   file.basename.toLowerCase().endsWith(config.mp3Extension)
+
+export const prettyTrackInfo = (metadata: AlbumMetadata) => (track: AlbumMetadata.Track): string =>
+  s`${metadata.artist} - ${metadata.album} - ${StringUtils.padNumber(track.number)} ${track.title}`
 
 export const log = (
   message?: unknown,

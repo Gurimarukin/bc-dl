@@ -1,6 +1,7 @@
 import fs from 'fs'
 
 import { pipe } from 'fp-ts/function'
+import rimraf from 'rimraf'
 
 import { Dir, File, FileOrDir } from '../models/FileOrDir'
 import { Future, IO, List, Maybe } from './fp'
@@ -46,6 +47,16 @@ export namespace FsUtils {
   export function rename(oldF: FileOrDir, newF: FileOrDir): Future<void> {
     return Future.tryCatch(() => fs.promises.rename(oldF.path, newF.path))
   }
+
+  export const rmrf = (f: FileOrDir, options: rimraf.Options = {}): Future<void> =>
+    Future.tryCatch(
+      () =>
+        new Promise<void>((resolve, reject) =>
+          rimraf(f.path, options, (error: Error | null) =>
+            error === null ? resolve() : reject(error),
+          ),
+        ),
+    )
 
   export const rmdir = (dir: Dir, options?: fs.RmDirOptions): Future<void> =>
     Future.tryCatch(() => fs.promises.rmdir(dir.path, options))

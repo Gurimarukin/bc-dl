@@ -28,7 +28,9 @@ import {
   isMp3File,
   log,
   parseCommand,
-  writeTagsAndMoveFile,
+  prettyTrackInfo,
+  rmrfAlbumDirOnError,
+  writeAllTags,
 } from './common'
 
 type FileWithRawTags = Tuple<File, NodeID3.Tags>
@@ -70,52 +72,12 @@ const ensureAlbum = (httpGet: HttpGet, httpGetBuffer: HttpGetBuffer) => (
 
     log(s`>>> [${url}] Ensuring files`),
     Future.bind('albumDir', ({ metadata }) => Future.right(getAlbumDir(musicLibraryDir, metadata))),
-    Future.bind('actions', ({ metadata, cover, albumDir }) =>
-      getWriteTagActions(musicLibraryDir, url, albumDir, metadata, cover),
+    Future.bind('mp3Files', () => getMp3Files(musicLibraryDir)),
+    Future.bind('actions', ({ metadata, cover, albumDir, mp3Files }) =>
+      getActions(mp3Files, albumDir, metadata, cover),
     ),
     Future.do(({ albumDir }) => ensureAlbumDir(albumDir)),
-    Future.chain(({ actions }) =>
-      pipe(actions, NonEmptyArray.map(writeTagsAndMoveFile), Future.sequenceArray),
-    ),
-    Future.map(() => {}),
-  )
-
-const getWriteTagActions = (
-  musicLibraryDir: Dir,
-  url: Url,
-  albumDir: Dir,
-  metadata: AlbumMetadata,
-  cover: Buffer,
-): Future<NonEmptyArray<WriteTagsAction>> =>
-  pipe(
-    getMp3Files(musicLibraryDir),
-    Future.chain(mp3Files =>
-      pipe(
-        metadata.tracks,
-        NonEmptyArray.traverse(Validation.applicativeValidation)(
-          getAction(url, albumDir, metadata, cover, mp3Files),
-        ),
-        Either.mapLeft(errors =>
-          Error(
-            StringUtils.stripMargins(
-              s`Failed to find file for tracks:
-               |${pipe(errors, StringUtils.mkString('\n'))}
-               |
-               |Considered files:
-               |${pipe(
-                 mp3Files,
-                 NonEmptyArray.map(FileWithTags.stringify),
-                 StringUtils.mkString('\n'),
-               )}
-               |
-               |Album metadata:
-               |${AlbumMetadata.stringify(metadata)}`,
-            ),
-          ),
-        ),
-        Future.fromEither,
-      ),
-    ),
+    rmrfAlbumDirOnError(url)(({ actions }) => writeAllTags(actions)),
   )
 
 const fileWithTagsCodec: D.Decoder<FileWithRawTags, FileWithTags> = {
@@ -152,8 +114,39 @@ const getFileWithTags = (f: FileOrDir): Maybe<Future<FileWithRawTags>> =>
       )
     : Maybe.none
 
+const getActions = (
+  mp3Files: NonEmptyArray<FileWithTags>,
+  albumDir: Dir,
+  metadata: AlbumMetadata,
+  cover: Buffer,
+): Future<NonEmptyArray<WriteTagsAction>> =>
+  pipe(
+    metadata.tracks,
+    NonEmptyArray.traverse(Validation.applicativeValidation)(
+      getAction(albumDir, metadata, cover, mp3Files),
+    ),
+    Either.mapLeft(errors =>
+      Error(
+        StringUtils.stripMargins(
+          s`Failed to find file for tracks:
+               |${pipe(errors, StringUtils.mkString('\n'))}
+               |
+               |Considered files:
+               |${pipe(
+                 mp3Files,
+                 NonEmptyArray.map(FileWithTags.stringify),
+                 StringUtils.mkString('\n'),
+               )}
+               |
+               |Album metadata:
+               |${AlbumMetadata.stringify(metadata)}`,
+        ),
+      ),
+    ),
+    Future.fromEither,
+  )
+
 const getAction = (
-  url: Url,
   albumDir: Dir,
   metadata: AlbumMetadata,
   cover: Buffer,
@@ -163,14 +156,11 @@ const getAction = (
     mp3Files,
     List.findFirst(trackMatchesTags(metadata, track)),
     Either.fromOption(() => NonEmptyArray.of(noMatchError(metadata, track))),
-    Either.map(([file]) => getWriteTagsAction(url, albumDir, metadata, cover, file, track)),
+    Either.map(([file]) => getWriteTagsAction(albumDir, metadata, cover, file, track)),
   )
 
-const prettyTrackInfo = (metadata: AlbumMetadata, track: AlbumMetadata.Track): string =>
-  s`${metadata.artist} - ${metadata.album} - ${StringUtils.padNumber(track.number)} ${track.title}`
-
 const noMatchError = (metadata: AlbumMetadata, track: AlbumMetadata.Track): string =>
-  s`Couldn't find file matching track: ${prettyTrackInfo(metadata, track)}`
+  s`Couldn't find file matching track: ${prettyTrackInfo(metadata)(track)}`
 
 const trackMatchesTags = (metadata: AlbumMetadata, track: AlbumMetadata.Track) => ([
   ,
