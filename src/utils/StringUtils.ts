@@ -29,10 +29,14 @@ export namespace StringUtils {
   export const cleanFileName = (str: string): string => str.replace(fileNameForbiddenChars, '')
 
   export const almostIncludes = (short: string) => (long: string): boolean =>
-    long.normalize().toLowerCase().includes(short.normalize().toLowerCase())
+    sanitizeAlmost(long).includes(sanitizeAlmost(short))
 
   export const almostEquals = (a: string, b: string): boolean =>
-    a.normalize().toLowerCase() === b.normalize().toLowerCase()
+    sanitizeAlmost(a) === sanitizeAlmost(b)
+
+  const boringChars = /[_\/]/g
+  const sanitizeAlmost = (str: string): string =>
+    str.normalize().toLowerCase().replace(boringChars, '')
 
   const whitespace = /\s+/g
   const weirdCharSometimesReturnedByBandcamp = new RegExp(s`${String.fromCharCode(8203)}+`, 'g')
