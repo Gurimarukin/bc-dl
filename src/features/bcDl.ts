@@ -27,7 +27,7 @@ import {
   getMetadata,
   getWriteTagsAction,
   isMp3File,
-  log,
+  logger,
   parseCommand,
   prettyTrackInfo,
   rmrfAlbumDirOnError,
@@ -64,13 +64,13 @@ const downloadAlbum = (
   pipe(
     Future.Do,
 
-    log(s`>>> [${url}] Fetching metadata`),
+    logger.logWithUrl(url, 'Fetching metadata'),
     Future.bind('metadata', () => getMetadata(httpGet)(genre, url)),
 
-    log(s`>>> [${url}] Downloading cover`),
+    logger.logWithUrl(url, 'Downloading cover'),
     Future.bind('cover', ({ metadata }) => downloadCover(httpGetBuffer)(metadata.coverUrl)),
 
-    log(s`>>> [${url}] Downloading album`),
+    logger.logWithUrl(url, 'Downloading album'),
     Future.bind('albumDir', ({ metadata }) => Future.right(getAlbumDir(musicLibraryDir, metadata))),
     Future.do(({ albumDir }) => ensureAlbumDir(albumDir)),
     rmrfAlbumDirOnError(url)(({ metadata, cover, albumDir }) =>
@@ -78,7 +78,7 @@ const downloadAlbum = (
         Future.fromIOEither(FsUtils.chdir(albumDir)),
         Future.chain(() => execYoutubeDl(url)),
 
-        log(s`>>> [${url}] Writing tags and renaming files`),
+        logger.logWithUrl(url, 'Writing tags and renaming files'),
         Future.chain(() => getDownloadedMp3Files(albumDir)),
         Future.chain(mp3Files => getActions(mp3Files, albumDir, metadata, cover)),
         Future.chain(writeAllTags),
@@ -224,7 +224,6 @@ const getAction = (albumDir: Dir, metadata: AlbumMetadata, cover: Buffer) => ([
 const trackMatchesFileName = (cleanedFileName: string) => (track: AlbumMetadata.Track): boolean =>
   cleanedFileName.includes(StringUtils.cleanForCompare(track.title))
 
-const warning = '[WARNING] '
 const logMoreThanOne = (
   tracks: NonEmptyArray<AlbumMetadata.Track>,
   file: File,
@@ -232,11 +231,11 @@ const logMoreThanOne = (
 ): IO<void> =>
   Console.log(
     StringUtils.stripMargins(
-      s`${warning}Found more that one track matching file: ${file.path}
-       |${warning}Picked ${AlbumMetadata.Track.stringify(res)}
+      s`${logger.warnPrefix}Found more that one track matching file: ${file.path}
+       |${logger.warnPrefix}Picked ${AlbumMetadata.Track.stringify(res)}
        |${pipe(
          tracks,
-         NonEmptyArray.map(t => s`${warning}- ${AlbumMetadata.Track.stringify(t)}`),
+         NonEmptyArray.map(t => s`${logger.warnPrefix}- ${AlbumMetadata.Track.stringify(t)}`),
          StringUtils.mkString('\n'),
        )}`,
     ),

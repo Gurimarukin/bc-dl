@@ -8,4 +8,10 @@ export const config = {
   epRegex: /E\s*\.?\s*P\s*\.?/g,
   yearRegex: /\D(\d{4})/,
   jpgExtension: ['.jpg', '.jpeg'],
+  colors: {
+    error: '31;1',
+    warn: '33',
+    // url: '90',
+    url: '36',
+  },
 }

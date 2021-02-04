@@ -26,7 +26,7 @@ import {
   getMetadata,
   getWriteTagsAction,
   isMp3File,
-  log,
+  logger,
   parseCommand,
   prettyTrackInfo,
   rmrfAlbumDirOnError,
@@ -62,13 +62,13 @@ const ensureAlbum = (httpGet: HttpGet, httpGetBuffer: HttpGetBuffer) => (
   pipe(
     Future.Do,
 
-    log(s`>>> [${url}] Fetching metadata`),
+    logger.logWithUrl(url, 'Fetching metadata'),
     Future.bind('metadata', () => getMetadata(httpGet)(genre, url)),
 
-    log(s`>>> [${url}] Downloading cover`),
+    logger.logWithUrl(url, 'Downloading cover'),
     Future.bind('cover', ({ metadata }) => downloadCover(httpGetBuffer)(metadata.coverUrl)),
 
-    log(s`>>> [${url}] Ensuring files`),
+    logger.logWithUrl(url, 'Ensuring files'),
     Future.bind('albumDir', ({ metadata }) => Future.right(getAlbumDir(musicLibraryDir, metadata))),
     Future.bind('mp3Files', () => getMp3Files(musicLibraryDir)),
     Future.bind('actions', ({ metadata, cover, albumDir, mp3Files }) =>

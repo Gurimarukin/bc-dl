@@ -1,3 +1,5 @@
+import util from 'util'
+
 import { AxiosResponse } from 'axios'
 import { Command, Opts, codecToDecode } from 'decline-ts'
 import { apply } from 'fp-ts'
@@ -13,7 +15,7 @@ import { Url } from '../models/Url'
 import { WriteTagsAction } from '../models/WriteTagsAction'
 import { Console } from '../utils/Console'
 import { DOMUtils } from '../utils/DOMUtils'
-import { Either, Future, List, Maybe, NonEmptyArray } from '../utils/fp'
+import { Either, Future, IO, List, Maybe, NonEmptyArray } from '../utils/fp'
 import { FsUtils } from '../utils/FsUtils'
 import { StringUtils, s } from '../utils/StringUtils'
 import { TagsUtils } from '../utils/TagsUtils'
@@ -213,8 +215,21 @@ export const isMp3File = (file: File): boolean =>
 export const prettyTrackInfo = (metadata: AlbumMetadata) => (track: AlbumMetadata.Track): string =>
   s`${metadata.artist} - ${metadata.album} - ${StringUtils.padNumber(track.number)} ${track.title}`
 
-export const log = (
-  message?: unknown,
-  ...optionalParams: ReadonlyArray<unknown>
-): (<A>(fa: Future<A>) => Future<A>) =>
-  Future.do(() => Future.fromIOEither(Console.log(message, ...optionalParams)))
+const color = (str: string, c: string): string =>
+  process.stdout.isTTY ? `\x1B[${c}m${str}\x1B[0m` : str
+
+export const logger = {
+  logWithUrl: (
+    url: Url,
+    message?: unknown,
+    ...optionalParams: List<unknown>
+  ): (<A>(fa: Future<A>) => Future<A>) =>
+    Future.do(() =>
+      Future.fromIOEither(
+        Console.log(s`[${color(Url.unwrap(url), config.colors.url)}]`, message, ...optionalParams),
+      ),
+    ),
+  warnPrefix: s`[${color('WARNING', config.colors.warn)}] `,
+  error: (message?: unknown, ...optionalParams: List<unknown>): IO<void> =>
+    Console.error(color(util.format(message, ...optionalParams), config.colors.error)),
+}

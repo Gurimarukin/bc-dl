@@ -14,6 +14,7 @@ type CommandOutput = {
 
 type Result = Either<childProcess.ExecException, CommandOutput>
 
+// TODO: log output
 export const execCommand = (
   command: string,
   args: List<string> = [],
