@@ -19,11 +19,7 @@ export const execCommand = (
   args: List<string> = [],
   options?: childProcess.ExecOptions,
 ): Future<Result> => {
-  const cmd = pipe(
-    [command, ...args],
-    List.map((s: string) => JSON.stringify(s)),
-    StringUtils.mkString(' '),
-  )
+  const cmd = pipe([command, ...args], StringUtils.mkString(' '))
   return Future.tryCatch(
     () =>
       new Promise<Result>(resolve =>
@@ -36,7 +32,14 @@ export const execCommand = (
 
 export const execYoutubeDl: ExecYoutubeDl = url =>
   pipe(
-    execCommand('youtube-dl', [Url.unwrap(url)]),
+    execCommand('youtube-dl', [
+      '--extract-audio',
+      '--audio-format',
+      'mp3',
+      '--audio-quality',
+      '0',
+      pipe(url, Url.unwrap, (s: string) => JSON.stringify(s)),
+    ]),
     Future.chain(
       Either.fold(
         e => Future.left(e),

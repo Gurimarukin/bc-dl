@@ -36,8 +36,8 @@ export namespace StringUtils {
 
   const whitespaces = /\s+/g
 
-  const irrelevantChars = /[_\-/:]/g
-  const sanitizeAlmost = (str: string): string =>
+  const irrelevantChars = /[*_\-/:]/g
+  export const sanitizeAlmost = (str: string): string =>
     str.normalize().toLowerCase().replace(irrelevantChars, '').replace(whitespaces, ' ')
 
   const weirdCharSometimesReturnedByBandcamp = new RegExp(s`${String.fromCharCode(8203)}+`, 'g')

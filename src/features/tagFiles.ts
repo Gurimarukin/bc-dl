@@ -1,11 +1,11 @@
 import { flow, pipe } from 'fp-ts/function'
 import * as D from 'io-ts/Decoder'
-import NodeID3 from 'node-id3'
 
 import { Album } from '../models/Album'
 import { AlbumMetadata } from '../models/AlbumMetadata'
 import { DefinedTags } from '../models/DefinedTags'
-import { Dir, File, FileOrDir } from '../models/FileOrDir'
+import { Dir, FileOrDir } from '../models/FileOrDir'
+import { FileWithRawTags } from '../models/FileWithRawTags'
 import { FileWithTags } from '../models/FileWithTags'
 import { Genre } from '../models/Genre'
 import { Url } from '../models/Url'
@@ -32,8 +32,6 @@ import {
   rmrfAlbumDirOnError,
   writeAllTags,
 } from './common'
-
-type FileWithRawTags = Tuple<File, NodeID3.Tags>
 
 const cmd = CmdArgs.of(
   'tag-files',
@@ -128,18 +126,14 @@ const getActions = (
     Either.mapLeft(errors =>
       Error(
         StringUtils.stripMargins(
-          s`Failed to find file for tracks:
-               |${pipe(errors, StringUtils.mkString('\n'))}
-               |
-               |Considered files:
-               |${pipe(
-                 mp3Files,
-                 NonEmptyArray.map(FileWithTags.stringify),
-                 StringUtils.mkString('\n'),
-               )}
-               |
-               |Album metadata:
-               |${AlbumMetadata.stringify(metadata)}`,
+          s`Failed to find file matching tracks:
+           |${pipe(errors, StringUtils.mkString('\n'))}
+           |
+           |Considered files:
+           |${pipe(mp3Files, NonEmptyArray.map(FileWithTags.stringify), StringUtils.mkString('\n'))}
+           |
+           |Album metadata:
+           |${AlbumMetadata.stringify(metadata)}`,
         ),
       ),
     ),
@@ -154,9 +148,26 @@ const getAction = (
 ) => (track: AlbumMetadata.Track): Validation<WriteTagsAction> =>
   pipe(
     mp3Files,
-    List.findFirst(trackMatchesTags(metadata, track)),
+    List.filter(trackMatchesTags(metadata, track)),
+    NonEmptyArray.fromReadonlyArray,
     Either.fromOption(() => NonEmptyArray.of(noMatchError(metadata, track))),
-    Either.map(([file]) => getWriteTagsAction(albumDir, metadata, cover, file, track)),
+    Either.filterOrElse(
+      filesAndTags => filesAndTags.length === 1,
+      filesAndTags =>
+        NonEmptyArray.of(
+          StringUtils.stripMargins(
+            s`Found more that one file matching track: ${prettyTrackInfo(metadata)(track)}
+             |${pipe(
+               filesAndTags,
+               NonEmptyArray.map(t => s`- ${FileWithTags.stringify(t)}`),
+               StringUtils.mkString('\n'),
+             )}`,
+          ),
+        ),
+    ),
+    Either.map(filesAndTags =>
+      getWriteTagsAction(albumDir, metadata, cover, NonEmptyArray.head(filesAndTags)[0], track),
+    ),
   )
 
 const noMatchError = (metadata: AlbumMetadata, track: AlbumMetadata.Track): string =>
