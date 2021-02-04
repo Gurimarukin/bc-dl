@@ -1,21 +1,20 @@
+import { ord } from 'fp-ts'
 import { flow, pipe } from 'fp-ts/function'
+import { Ord } from 'fp-ts/Ord'
 import * as D from 'io-ts/Decoder'
-import NodeID3 from 'node-id3'
 
 import { Album } from '../models/Album'
 import { AlbumMetadata } from '../models/AlbumMetadata'
 import { Dir, File, FileOrDir } from '../models/FileOrDir'
-import { FileWithRawTags } from '../models/FileWithRawTags'
 import { Genre } from '../models/Genre'
 import { Url } from '../models/Url'
 import { Validation } from '../models/Validation'
 import { WriteTagsAction } from '../models/WriteTagsAction'
 import { decodeError } from '../utils/decodeError'
-import { findOneAndOnlyOne } from '../utils/findOneAndOnlyOne'
 import { Either, Future, List, NonEmptyArray, Tuple } from '../utils/fp'
 import { FsUtils } from '../utils/FsUtils'
+import { listFoldLength } from '../utils/listFoldLength'
 import { StringUtils, s } from '../utils/StringUtils'
-import { TagsUtils } from '../utils/TagsUtils'
 import {
   CmdArgs,
   ExecYoutubeDl,
@@ -86,46 +85,46 @@ const downloadAlbum = (
     ),
   )
 
-const fileWithRawTagsNeaCodec: D.Decoder<
-  List<FileWithRawTags>,
-  NonEmptyArray<FileWithRawTags>
-> = pipe(
-  D.fromArray(D.id<FileWithRawTags>()),
-  D.refine<List<FileWithRawTags>, NonEmptyArray<FileWithRawTags>>(List.isNonEmpty, 'NonEmptyArray'),
-) as D.Decoder<List<FileWithRawTags>, NonEmptyArray<FileWithRawTags>>
+const fileNeaCodec: D.Decoder<List<File>, NonEmptyArray<File>> = pipe(
+  D.fromArray(D.id<File>()),
+  D.refine<List<File>, NonEmptyArray<File>>(List.isNonEmpty, 'NonEmptyArray'),
+) as D.Decoder<List<File>, NonEmptyArray<File>>
 
-const getDownloadedMp3Files = (albumDir: Dir): Future<NonEmptyArray<FileWithRawTags>> =>
+const getDownloadedMp3Files = (albumDir: Dir): Future<NonEmptyArray<File>> =>
   pipe(
     FsUtils.readdir(albumDir),
-    // TODO: don't stop on first Error
-    // s`Errors while listing mp3 files:\n${pipe(e, StringUtils.mkString('\n'))}`
-    Future.chain(flow(List.map(getFileWithTags), Future.sequenceArray)),
+    Future.chain(
+      flow(
+        List.traverse(Validation.applicativeValidation)(getMp3File),
+        Either.mapLeft(e =>
+          Error(s`Errors while listing mp3 files:\n${pipe(e, StringUtils.mkString('\n'))}`),
+        ),
+        Future.fromEither,
+      ),
+    ),
     Future.chain(u =>
       pipe(
-        fileWithRawTagsNeaCodec.decode(u),
-        Either.mapLeft(decodeError('NonEmptyArray<FileWithTags>')(u)),
+        fileNeaCodec.decode(u),
+        Either.mapLeft(decodeError('NonEmptyArray<File>')(u)),
         Future.fromEither,
       ),
     ),
   )
 
-const getFileWithTags = (f: FileOrDir): Future<FileWithRawTags> => {
-  if (FileOrDir.isDir(f)) return Future.left(Error(s`Unexpected directory: ${f.path}`))
-  if (!isMp3File(f)) return Future.left(Error(s`Non mp3 file: ${f.path}`))
-  return pipe(
-    TagsUtils.read(f),
-    Future.map(tags => Tuple.of(f, tags)),
-  )
+const getMp3File = (f: FileOrDir): Validation<File> => {
+  if (FileOrDir.isDir(f)) return Either.left(NonEmptyArray.of(s`Unexpected directory: ${f.path}`))
+  if (!isMp3File(f)) return Either.left(NonEmptyArray.of(s`Non mp3 file: ${f.path}`))
+  return Either.right(f)
 }
 
-const getActions = (
-  mp3Files: NonEmptyArray<FileWithRawTags>,
+export const getActions = (
+  mp3Files: NonEmptyArray<File>,
   albumDir: Dir,
   metadata: AlbumMetadata,
   cover: Buffer,
 ): Future<NonEmptyArray<WriteTagsAction>> =>
   pipe(
-    mp3Files,
+    cleanFileNames(mp3Files, metadata),
     NonEmptyArray.traverse(Validation.applicativeValidation)(getAction(albumDir, metadata, cover)),
     Either.mapLeft(errors =>
       Error(
@@ -145,61 +144,67 @@ const getActions = (
     Future.fromEither,
   )
 
+type CleanedFile = Tuple<File, string>
+
+const reverseOrdNumber = ord.getDualOrd(ord.ordNumber)
+export const ordStringLength: Ord<string> = ord.fromCompare((x, y) => {
+  const lengthComparison = reverseOrdNumber.compare(x.length, y.length)
+  return lengthComparison === 0 ? ord.ordString.compare(x, y) : lengthComparison
+})
+
+const cleanFileNames = (
+  mp3Files: NonEmptyArray<File>,
+  metadata: AlbumMetadata,
+): NonEmptyArray<CleanedFile> => {
+  const cleanedFiles = pipe(
+    mp3Files,
+    NonEmptyArray.map(f => Tuple.of(f, StringUtils.cleanForCompare(f.basename))),
+  )
+  const deletions = pipe(
+    [
+      StringUtils.cleanForCompare(metadata.artist),
+      pipe(metadata.album, Album.unwrap, StringUtils.cleanForCompare),
+    ],
+    List.sort(ordStringLength),
+  )
+  return pipe(
+    deletions,
+    List.reduce(cleanedFiles, (files, toDelete) =>
+      everyStringIncludes(files, toDelete)
+        ? pipe(
+            files,
+            NonEmptyArray.map(([file, cleanedName]) =>
+              Tuple.of(file, cleanedName.replace(toDelete, '').trim()),
+            ),
+          )
+        : files,
+    ),
+  )
+}
+
+const everyStringIncludes = (files: List<CleanedFile>, str: string): boolean =>
+  pipe(
+    files,
+    List.every(([, cleanedName]) => cleanedName.includes(str)),
+  )
+
 const getAction = (albumDir: Dir, metadata: AlbumMetadata, cover: Buffer) => ([
   file,
-  tags,
-]: FileWithRawTags): Validation<WriteTagsAction> =>
+  cleanedName,
+]: CleanedFile): Validation<WriteTagsAction> =>
   pipe(
     metadata.tracks,
-    findOneAndOnlyOne(
-      trackMatchesFileName(file.basename),
+    List.filter(trackMatchesFileName(cleanedName)),
+    listFoldLength(
       () => Either.left(NonEmptyArray.of(file.path)),
-      Either.right,
-      findMatchingFileByTags(metadata, file, tags),
+      t => Either.right(t),
+      flow(moreThanOne('Found more that one track matching file', file), Either.left),
     ),
     Either.map(tracks => getWriteTagsAction(albumDir, metadata, cover, file, tracks)),
   )
 
-const trackMatchesFileName = (file: string) => (track: AlbumMetadata.Track): boolean =>
-  pipe(file, StringUtils.almostIncludes(track.title))
-
-const findMatchingFileByTags = (metadata: AlbumMetadata, file: File, tags: NodeID3.Tags) => (
-  tracks: NonEmptyArray<AlbumMetadata.Track>,
-): Validation<AlbumMetadata.Track> =>
-  pipe(
-    tracks,
-    findOneAndOnlyOne(
-      trackMatchesTags(tags),
-      () => findMatchingFileByRemovingAlbumName(metadata, file, tracks), // tags were probably empty
-      Either.right,
-      flow(moreThanOne('Found more that one track matching file', file), Either.left),
-    ),
-  )
-
-const trackMatchesTags = (tags: NodeID3.Tags) => (track: AlbumMetadata.Track): boolean =>
-  tags.trackNumber !== undefined && Number(tags.trackNumber) === track.number
-
-const findMatchingFileByRemovingAlbumName = (
-  metadata: AlbumMetadata,
-  file: File,
-  tracks: NonEmptyArray<AlbumMetadata.Track>,
-): Validation<AlbumMetadata.Track> =>
-  pipe(
-    tracks,
-    findOneAndOnlyOne(
-      trackMatchesFileName(
-        StringUtils.sanitizeAlmost(file.basename)
-          .replace(StringUtils.sanitizeAlmost(metadata.artist), '')
-          .replace(StringUtils.sanitizeAlmost(Album.unwrap(metadata.album)), ''),
-      ),
-      () =>
-        Either.left(
-          moreThanOne('Found more that one track matching file and no tags', file)(tracks),
-        ),
-      Either.right,
-      flow(moreThanOne('Found more that one track matching file and no tags', file), Either.left),
-    ),
-  )
+const trackMatchesFileName = (cleanedFileName: string) => (track: AlbumMetadata.Track): boolean =>
+  cleanedFileName.includes(StringUtils.cleanForCompare(track.title))
 
 const moreThanOne = (message: string, file: File) => (
   tracks: NonEmptyArray<AlbumMetadata.Track>,

@@ -55,7 +55,7 @@ export namespace DOMUtils {
         pipe(
           elt.textContent,
           Either.fromNullable(s`No textContent for element: ${selector}`),
-          Either.map(StringUtils.sanitize),
+          Either.map(StringUtils.cleanHtml),
         ),
       ),
       Either.filterOrElse(

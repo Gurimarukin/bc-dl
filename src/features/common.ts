@@ -171,7 +171,7 @@ export const getWriteTagsAction = (
   ),
 })
 
-const getTags = (
+export const getTags = (
   // url: Url,
   metadata: AlbumMetadata,
   cover: Buffer,

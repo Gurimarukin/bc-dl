@@ -1,16 +1,13 @@
-import { Predicate, pipe } from 'fp-ts/function'
+import { flow } from 'fp-ts/function'
 
 import { List, Maybe, NonEmptyArray } from './fp'
 
-export const findOneAndOnlyOne = <A, B>(
-  predicate: Predicate<A>,
+export const listFoldLength = <A, B>(
   onNone: () => B,
   onOne: (a: A) => B,
   onMultiple: (as: NonEmptyArray<A>) => B,
-) => (list: List<A>): B =>
-  pipe(
-    list,
-    List.filter(predicate),
+): ((list: List<A>) => B) =>
+  flow(
     NonEmptyArray.fromReadonlyArray,
     Maybe.fold(
       () => onNone(),

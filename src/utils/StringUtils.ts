@@ -28,23 +28,14 @@ export namespace StringUtils {
   const fileNameForbiddenChars = /[<>:"/\?\*\|\\]/g
   export const cleanFileName = (str: string): string => str.replace(fileNameForbiddenChars, '')
 
-  export const almostIncludes = (short: string) => (long: string): boolean =>
-    sanitizeAlmost(long).includes(sanitizeAlmost(short))
-
-  export const almostEquals = (a: string, b: string): boolean =>
-    sanitizeAlmost(a) === sanitizeAlmost(b)
-
   const whitespaces = /\s+/g
+  export const cleanWhitespaces = (str: string): string => str.replace(whitespaces, ' ')
 
   const irrelevantChars = /[*_\-/:]/g
-  export const sanitizeAlmost = (str: string): string =>
-    str.normalize().toLowerCase().replace(irrelevantChars, '').replace(whitespaces, ' ')
+  export const cleanForCompare = (str: string): string =>
+    cleanWhitespaces(str.normalize().toLowerCase().replace(irrelevantChars, ''))
 
   const weirdCharSometimesReturnedByBandcamp = new RegExp(s`${String.fromCharCode(8203)}+`, 'g')
-  export const sanitize = (str: string): string =>
-    str
-      .trim()
-      .replace(whitespaces, ' ')
-      .replace(weirdCharSometimesReturnedByBandcamp, '')
-      .normalize()
+  export const cleanHtml = (str: string): string =>
+    cleanWhitespaces(str.trim()).replace(weirdCharSometimesReturnedByBandcamp, '').normalize()
 }

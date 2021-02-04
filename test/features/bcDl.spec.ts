@@ -1,13 +1,20 @@
 import { flow, pipe } from 'fp-ts/function'
 
-import { bcDl } from '../../src/features/bcDl'
-import { ExecYoutubeDl, HttpGet, HttpGetBuffer, getMetadata } from '../../src/features/common'
+import { bcDl, getActions, ordStringLength } from '../../src/features/bcDl'
+import {
+  ExecYoutubeDl,
+  HttpGet,
+  HttpGetBuffer,
+  getMetadata,
+  getTags,
+} from '../../src/features/common'
 import { Album } from '../../src/models/Album'
 import { AlbumMetadata } from '../../src/models/AlbumMetadata'
 import { Dir, File, FileOrDir } from '../../src/models/FileOrDir'
 import { Genre } from '../../src/models/Genre'
 import { Url } from '../../src/models/Url'
-import { Future, List, Tuple } from '../../src/utils/fp'
+import { WriteTagsAction } from '../../src/models/WriteTagsAction'
+import { Either, Future, List, NonEmptyArray, Tuple } from '../../src/utils/fp'
 import { FsUtils } from '../../src/utils/FsUtils'
 import { s } from '../../src/utils/StringUtils'
 import { TagsUtils } from '../../src/utils/TagsUtils'
@@ -15,7 +22,9 @@ import { TagsUtils } from '../../src/utils/TagsUtils'
 const musicDir = pipe(Dir.of(__dirname), Dir.joinDir('..', 'music'))
 const mp3Dir = pipe(Dir.of(__dirname), Dir.joinDir('..', 'resources', 'mp3'))
 
-describe('bcDl', () => {
+const imageBuffer = Buffer.from('Image Buffer', 'utf-8')
+
+describe('getMetadata', () => {
   it('should get metadata', () =>
     pipe(
       getMetadata(httpGetMocked)(
@@ -46,7 +55,283 @@ describe('bcDl', () => {
     ))
 })
 
-describe('bcDl (e2e)', () => {
+describe('getActions', () => {
+  const testGetActions = (metadata: AlbumMetadata, mp3Files: NonEmptyArray<File>) => (
+    // eslint-disable-next-line functional/no-return-void
+    f: (result: Either<Error, NonEmptyArray<WriteTagsAction>>) => void,
+  ): Promise<void> =>
+    pipe(
+      getActions(mp3Files, Dir.of(''), metadata, imageBuffer),
+      Future.map(Either.right),
+      Future.recover<Either<Error, NonEmptyArray<WriteTagsAction>>>(
+        flow(Either.left, Future.right),
+      ),
+      Future.map(f),
+      Future.runUnsafe,
+    )
+
+  /**
+   * Artist's name and album's name are the same
+   */
+  const blackSabb: AlbumMetadata = {
+    artist: 'Black Sabbath',
+    album: Album.wrap('Black Sabbath'),
+    isEp: false,
+    year: 1970,
+    genre: Genre.wrap('Heavy Metal'),
+    tracks: [
+      { number: 1, title: 'Black Sabbath' },
+      { number: 2, title: 'The Wizard' },
+      { number: 3, title: 'Behind the Wall of Sleep' },
+      { number: 4, title: 'N.I.B.' },
+      { number: 5, title: 'The Wizard II' },
+    ],
+    coverUrl: Url.wrap('https://www.metal-archives.com/images/4/8/2/482.jpg?5008'),
+  }
+
+  it('should for files having only track title', () =>
+    testGetActions(blackSabb, [
+      File.fromPath('black sabbath (1).mp3'),
+      File.fromPath('the wizard (2).mp3'),
+      // File.fromPath('the wizard ii (5).mp3'), // TODO
+    ])(result => {
+      expect(result).toStrictEqual(
+        Either.right<Error, NonEmptyArray<WriteTagsAction>>([
+          {
+            file: File.fromPath('black sabbath (1).mp3'),
+            newTags: getTags(blackSabb, imageBuffer, {
+              number: 1,
+              title: 'Black Sabbath',
+            }),
+            renameTo: File.fromPath('01 - Black Sabbath.mp3'),
+          },
+          {
+            file: File.fromPath('the wizard (2).mp3'),
+            newTags: getTags(blackSabb, imageBuffer, { number: 2, title: 'The Wizard' }),
+            renameTo: File.fromPath('02 - The Wizard.mp3'),
+          },
+        ]),
+      )
+    }))
+
+  it('should for files having artist name and track title', () =>
+    testGetActions(blackSabb, [
+      File.fromPath('black sabbath - black sabbath (1).mp3'),
+      File.fromPath('black sabbath - the wizard (2).mp3'),
+      // File.fromPath('black sabbath - the wizard ii (5).mp3'), // TODO
+    ])(result => {
+      expect(result).toStrictEqual(
+        Either.right<Error, NonEmptyArray<WriteTagsAction>>([
+          {
+            file: File.fromPath('black sabbath - black sabbath (1).mp3'),
+            newTags: getTags(blackSabb, imageBuffer, {
+              number: 1,
+              title: 'Black Sabbath',
+            }),
+            renameTo: File.fromPath('01 - Black Sabbath.mp3'),
+          },
+          {
+            file: File.fromPath('black sabbath - the wizard (2).mp3'),
+            newTags: getTags(blackSabb, imageBuffer, { number: 2, title: 'The Wizard' }),
+            renameTo: File.fromPath('02 - The Wizard.mp3'),
+          },
+        ]),
+      )
+    }))
+
+  it('should for files having album name and track title', () =>
+    testGetActions(blackSabb, [
+      File.fromPath('black sabbath - black sabbath (1).mp3'),
+      File.fromPath('black sabbath - the wizard (2).mp3'),
+      // File.fromPath('black sabbath - the wizard ii (5).mp3'), // TODO
+    ])(result => {
+      expect(result).toStrictEqual(
+        Either.right<Error, NonEmptyArray<WriteTagsAction>>([
+          {
+            file: File.fromPath('black sabbath - black sabbath (1).mp3'),
+            newTags: getTags(blackSabb, imageBuffer, {
+              number: 1,
+              title: 'Black Sabbath',
+            }),
+            renameTo: File.fromPath('01 - Black Sabbath.mp3'),
+          },
+          {
+            file: File.fromPath('black sabbath - the wizard (2).mp3'),
+            newTags: getTags(blackSabb, imageBuffer, { number: 2, title: 'The Wizard' }),
+            renameTo: File.fromPath('02 - The Wizard.mp3'),
+          },
+        ]),
+      )
+    }))
+
+  it('should for files having artist name, album name and track title', () =>
+    testGetActions(blackSabb, [
+      File.fromPath('black sabbath - black sabbath - black sabbath (1).mp3'),
+      File.fromPath('black sabbath - black sabbath - the wizard (2).mp3'),
+      // File.fromPath('black sabbath - black sabbath - the wizard ii (5).mp3'), // TODO
+    ])(result => {
+      expect(result).toStrictEqual(
+        Either.right<Error, NonEmptyArray<WriteTagsAction>>([
+          {
+            file: File.fromPath('black sabbath - black sabbath - black sabbath (1).mp3'),
+            newTags: getTags(blackSabb, imageBuffer, {
+              number: 1,
+              title: 'Black Sabbath',
+            }),
+            renameTo: File.fromPath('01 - Black Sabbath.mp3'),
+          },
+          {
+            file: File.fromPath('black sabbath - black sabbath - the wizard (2).mp3'),
+            newTags: getTags(blackSabb, imageBuffer, { number: 2, title: 'The Wizard' }),
+            renameTo: File.fromPath('02 - The Wizard.mp3'),
+          },
+        ]),
+      )
+    }))
+
+  /**
+   * Artist's name includes album's name
+   */
+  const artistIncludesAlbum: AlbumMetadata = {
+    artist: 'Muezli II',
+    album: Album.wrap('Muezli'),
+    isEp: false,
+    year: 1970,
+    genre: Genre.wrap('Heavy Metal'),
+    tracks: [
+      { number: 1, title: 'Black Sabbath' },
+      { number: 2, title: 'Muezli' },
+      { number: 3, title: 'Muezli V' },
+      { number: 4, title: 'Muezli II' },
+    ],
+    coverUrl: Url.wrap('https://www.metal-archives.com/images/4/8/2/482.jpg?5008'),
+  }
+
+  it('should for files having artist name, album name and track title (artistIncludesAlbum)', () =>
+    testGetActions(artistIncludesAlbum, [
+      File.fromPath('muezli ii - muezli - black sabbath (1).mp3'),
+      File.fromPath('muezli ii - muezli - muezli (2).mp3'),
+      // File.fromPath('muezli ii - muezli - muezli v (3).mp3'), // TODO
+      // File.fromPath('muezli ii - muezli - muezli ii (4).mp3'), // TODO
+    ])(result => {
+      expect(result).toStrictEqual(
+        Either.right<Error, NonEmptyArray<WriteTagsAction>>([
+          {
+            file: File.fromPath('muezli ii - muezli - black sabbath (1).mp3'),
+            newTags: getTags(artistIncludesAlbum, imageBuffer, {
+              number: 1,
+              title: 'Black Sabbath',
+            }),
+            renameTo: File.fromPath('01 - Black Sabbath.mp3'),
+          },
+          {
+            file: File.fromPath('muezli ii - muezli - muezli (2).mp3'),
+            newTags: getTags(artistIncludesAlbum, imageBuffer, { number: 2, title: 'Muezli' }),
+            renameTo: File.fromPath('02 - Muezli.mp3'),
+          },
+        ]),
+      )
+    }))
+
+  /**
+   * Album's name includes artist's name
+   */
+  const albumIncludesArtist: AlbumMetadata = {
+    artist: 'Muezli',
+    album: Album.wrap('Muezli II'),
+    isEp: false,
+    year: 1970,
+    genre: Genre.wrap('Heavy Metal'),
+    tracks: [
+      { number: 1, title: 'Black Sabbath' },
+      { number: 2, title: 'Muezli' },
+      { number: 3, title: 'Muezli V' },
+      { number: 4, title: 'Muezli II' },
+    ],
+    coverUrl: Url.wrap('https://www.metal-archives.com/images/4/8/2/482.jpg?5008'),
+  }
+
+  it('should for files having artist name, album name and track title (albumIncludesArtist)', () =>
+    testGetActions(albumIncludesArtist, [
+      File.fromPath('muezli - muezli ii - black sabbath (1).mp3'),
+      File.fromPath('muezli - muezli ii - muezli (2).mp3'),
+      // File.fromPath('muezli - muezli ii - muezli v (3).mp3'), // TODO
+      // File.fromPath('muezli - muezli ii - muezli ii (4).mp3'), // TODO
+    ])(result => {
+      expect(result).toStrictEqual(
+        Either.right<Error, NonEmptyArray<WriteTagsAction>>([
+          {
+            file: File.fromPath('muezli - muezli ii - black sabbath (1).mp3'),
+            newTags: getTags(albumIncludesArtist, imageBuffer, {
+              number: 1,
+              title: 'Black Sabbath',
+            }),
+            renameTo: File.fromPath('01 - Black Sabbath.mp3'),
+          },
+          {
+            file: File.fromPath('muezli - muezli ii - muezli (2).mp3'),
+            newTags: getTags(albumIncludesArtist, imageBuffer, { number: 2, title: 'Muezli' }),
+            renameTo: File.fromPath('02 - Muezli.mp3'),
+          },
+        ]),
+      )
+    }))
+
+  /**
+   * Artist's name and album's name are different
+   */
+  const albumArtistDifferent: AlbumMetadata = {
+    artist: 'Artist',
+    album: Album.wrap('Album'),
+    isEp: false,
+    year: 1970,
+    genre: Genre.wrap('Heavy Metal'),
+    tracks: [
+      { number: 1, title: 'Track' },
+      { number: 2, title: 'Album' },
+      { number: 3, title: 'Artist' },
+    ],
+    coverUrl: Url.wrap('https://www.metal-archives.com/images/4/8/2/482.jpg?5008'),
+  }
+
+  it('should for files having artist name, album name and track title (albumArtistDifferent)', () =>
+    testGetActions(albumArtistDifferent, [
+      File.fromPath('artist - album - track (1).mp3'),
+      File.fromPath('artist - album - album (2).mp3'),
+      File.fromPath('artist - album - artist (3).mp3'),
+    ])(result => {
+      expect(result).toStrictEqual(
+        Either.right<Error, NonEmptyArray<WriteTagsAction>>([
+          {
+            file: File.fromPath('artist - album - track (1).mp3'),
+            newTags: getTags(albumArtistDifferent, imageBuffer, { number: 1, title: 'Track' }),
+            renameTo: File.fromPath('01 - Track.mp3'),
+          },
+          {
+            file: File.fromPath('artist - album - album (2).mp3'),
+            newTags: getTags(albumArtistDifferent, imageBuffer, { number: 2, title: 'Album' }),
+            renameTo: File.fromPath('02 - Album.mp3'),
+          },
+          {
+            file: File.fromPath('artist - album - artist (3).mp3'),
+            newTags: getTags(albumArtistDifferent, imageBuffer, { number: 3, title: 'Artist' }),
+            renameTo: File.fromPath('03 - Artist.mp3'),
+          },
+        ]),
+      )
+    }))
+})
+
+describe('ordStringLength', () => {
+  it('should sort', () => {
+    const expected = ['looooong', '012', 'abc']
+
+    expect(pipe(['012', 'looooong', 'abc'], List.sort(ordStringLength))).toStrictEqual(expected)
+    expect(pipe(['abc', 'looooong', '012'], List.sort(ordStringLength))).toStrictEqual(expected)
+  })
+})
+
+describe('e2e', () => {
   beforeEach(() => pipe(cleanMusicDir(), Future.runUnsafe))
   afterEach(() => pipe(cleanMusicDir(), Future.runUnsafe))
 
@@ -80,8 +365,6 @@ describe('bcDl (e2e)', () => {
         )
       }),
       Future.map(result => {
-        const imageBuffer = Buffer.from('Image Buffer', 'utf-8')
-
         expect(result).toStrictEqual([
           [
             '01 - Ave Gloriosa.mp3',
