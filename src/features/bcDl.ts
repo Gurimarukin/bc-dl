@@ -10,8 +10,9 @@ import { Genre } from '../models/Genre'
 import { Url } from '../models/Url'
 import { Validation } from '../models/Validation'
 import { WriteTagsAction } from '../models/WriteTagsAction'
+import { Console } from '../utils/Console'
 import { decodeError } from '../utils/decodeError'
-import { Either, Future, List, NonEmptyArray, Tuple } from '../utils/fp'
+import { Either, Future, IO, List, NonEmptyArray, Tuple } from '../utils/fp'
 import { FsUtils } from '../utils/FsUtils'
 import { listFoldLength } from '../utils/listFoldLength'
 import { StringUtils, s } from '../utils/StringUtils'
@@ -125,23 +126,29 @@ export const getActions = (
 ): Future<NonEmptyArray<WriteTagsAction>> =>
   pipe(
     cleanFileNames(mp3Files, metadata),
-    NonEmptyArray.traverse(Validation.applicativeValidation)(getAction(albumDir, metadata, cover)),
-    Either.mapLeft(errors =>
-      Error(
-        StringUtils.stripMargins(
-          s`Failed to find track matching files:
-           |${pipe(errors, StringUtils.mkString('\n'))}
-           |
-           |Considered tracks:
-           |${pipe(
-             metadata.tracks,
-             NonEmptyArray.map(prettyTrackInfo(metadata)),
-             StringUtils.mkString('\n'),
-           )}`,
+    NonEmptyArray.traverse(IO.ioEither)(getAction(albumDir, metadata, cover)),
+    Future.fromIOEither,
+    Future.chain(
+      flow(
+        NonEmptyArray.sequence(Validation.applicativeValidation),
+        Either.mapLeft(errors =>
+          Error(
+            StringUtils.stripMargins(
+              s`Failed to find track matching files:
+               |${pipe(errors, StringUtils.mkString('\n'))}
+               |
+               |Considered tracks:
+               |${pipe(
+                 metadata.tracks,
+                 NonEmptyArray.map(prettyTrackInfo(metadata)),
+                 StringUtils.mkString('\n'),
+               )}`,
+            ),
+          ),
         ),
+        Future.fromEither,
       ),
     ),
-    Future.fromEither,
   )
 
 type CleanedFile = Tuple<File, string>
@@ -188,34 +195,49 @@ const everyStringIncludes = (files: List<CleanedFile>, str: string): boolean =>
     List.every(([, cleanedName]) => cleanedName.includes(str)),
   )
 
+const ordTrackTitleLength: Ord<AlbumMetadata.Track> = pipe(
+  ordStringLength,
+  ord.contramap((t: AlbumMetadata.Track) => t.title),
+)
+
 const getAction = (albumDir: Dir, metadata: AlbumMetadata, cover: Buffer) => ([
   file,
   cleanedName,
-]: CleanedFile): Validation<WriteTagsAction> =>
+]: CleanedFile): IO<Validation<WriteTagsAction>> =>
   pipe(
     metadata.tracks,
     List.filter(trackMatchesFileName(cleanedName)),
     listFoldLength(
-      () => Either.left(NonEmptyArray.of(file.path)),
-      t => Either.right(t),
-      flow(moreThanOne('Found more that one track matching file', file), Either.left),
+      () => IO.right(Either.left(NonEmptyArray.of(file.path))),
+      t => IO.right(Either.right(t)),
+      flow(NonEmptyArray.sort(ordTrackTitleLength), tracks => {
+        const res = NonEmptyArray.head(tracks)
+        return pipe(
+          logMoreThanOne(tracks, file, res),
+          IO.map(() => Either.right(res)),
+        )
+      }),
     ),
-    Either.map(tracks => getWriteTagsAction(albumDir, metadata, cover, file, tracks)),
+    IO.map(Either.map(track => getWriteTagsAction(albumDir, metadata, cover, file, track))),
   )
 
 const trackMatchesFileName = (cleanedFileName: string) => (track: AlbumMetadata.Track): boolean =>
   cleanedFileName.includes(StringUtils.cleanForCompare(track.title))
 
-const moreThanOne = (message: string, file: File) => (
+const warning = '[WARNING] '
+const logMoreThanOne = (
   tracks: NonEmptyArray<AlbumMetadata.Track>,
-): NonEmptyArray<string> =>
-  NonEmptyArray.of(
+  file: File,
+  res: AlbumMetadata.Track,
+): IO<void> =>
+  Console.log(
     StringUtils.stripMargins(
-      s`${message}: ${file.path}
-         |${pipe(
-           tracks,
-           NonEmptyArray.map(t => s`- ${AlbumMetadata.Track.stringify(t)}`),
-           StringUtils.mkString('\n'),
-         )}`,
+      s`${warning}Found more that one track matching file: ${file.path}
+       |${warning}Picked ${AlbumMetadata.Track.stringify(res)}
+       |${pipe(
+         tracks,
+         NonEmptyArray.map(t => s`${warning}- ${AlbumMetadata.Track.stringify(t)}`),
+         StringUtils.mkString('\n'),
+       )}`,
     ),
   )

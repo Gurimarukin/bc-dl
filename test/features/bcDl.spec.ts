@@ -93,7 +93,7 @@ describe('getActions', () => {
     testGetActions(blackSabb, [
       File.fromPath('black sabbath (1).mp3'),
       File.fromPath('the wizard (2).mp3'),
-      // File.fromPath('the wizard ii (5).mp3'), // TODO
+      File.fromPath('the wizard ii (5).mp3'),
     ])(result => {
       expect(result).toStrictEqual(
         Either.right<Error, NonEmptyArray<WriteTagsAction>>([
@@ -109,6 +109,11 @@ describe('getActions', () => {
             file: File.fromPath('the wizard (2).mp3'),
             newTags: getTags(blackSabb, imageBuffer, { number: 2, title: 'The Wizard' }),
             renameTo: File.fromPath('02 - The Wizard.mp3'),
+          },
+          {
+            file: File.fromPath('the wizard ii (5).mp3'),
+            newTags: getTags(blackSabb, imageBuffer, { number: 5, title: 'The Wizard II' }),
+            renameTo: File.fromPath('05 - The Wizard II.mp3'),
           },
         ]),
       )
