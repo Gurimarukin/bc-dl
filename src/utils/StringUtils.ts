@@ -46,5 +46,11 @@ export namespace StringUtils {
 
   const weirdCharSometimesReturnedByBandcamp = new RegExp(s`${String.fromCharCode(8203)}+`, 'g')
   export const cleanHtml = (str: string): string =>
-    cleanWhitespaces(str.trim()).replace(weirdCharSometimesReturnedByBandcamp, '').normalize()
+    cleanWhitespaces(
+      str
+        // newline please
+        .trim()
+        .replace(weirdCharSometimesReturnedByBandcamp, '')
+        .normalize(),
+    )
 }
