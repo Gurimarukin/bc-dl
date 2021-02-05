@@ -123,7 +123,7 @@ describe('getActions', () => {
     testGetActions(blackSabb, [
       File.fromPath('black sabbath - black sabbath (1).mp3'),
       File.fromPath('black sabbath - the wizard (2).mp3'),
-      // File.fromPath('black sabbath - the wizard ii (5).mp3'), // TODO
+      File.fromPath('black sabbath - the wizard ii (5).mp3'),
     ])(result => {
       expect(result).toStrictEqual(
         Either.right<Error, NonEmptyArray<WriteTagsAction>>([
@@ -139,6 +139,11 @@ describe('getActions', () => {
             file: File.fromPath('black sabbath - the wizard (2).mp3'),
             newTags: getTags(blackSabb, imageBuffer, { number: 2, title: 'The Wizard' }),
             renameTo: File.fromPath('02 - The Wizard.mp3'),
+          },
+          {
+            file: File.fromPath('black sabbath - the wizard ii (5).mp3'),
+            newTags: getTags(blackSabb, imageBuffer, { number: 5, title: 'The Wizard II' }),
+            renameTo: File.fromPath('05 - The Wizard II.mp3'),
           },
         ]),
       )
@@ -148,7 +153,7 @@ describe('getActions', () => {
     testGetActions(blackSabb, [
       File.fromPath('black sabbath - black sabbath (1).mp3'),
       File.fromPath('black sabbath - the wizard (2).mp3'),
-      // File.fromPath('black sabbath - the wizard ii (5).mp3'), // TODO
+      File.fromPath('black sabbath - the wizard ii (5).mp3'),
     ])(result => {
       expect(result).toStrictEqual(
         Either.right<Error, NonEmptyArray<WriteTagsAction>>([
@@ -165,6 +170,11 @@ describe('getActions', () => {
             newTags: getTags(blackSabb, imageBuffer, { number: 2, title: 'The Wizard' }),
             renameTo: File.fromPath('02 - The Wizard.mp3'),
           },
+          {
+            file: File.fromPath('black sabbath - the wizard ii (5).mp3'),
+            newTags: getTags(blackSabb, imageBuffer, { number: 5, title: 'The Wizard II' }),
+            renameTo: File.fromPath('05 - The Wizard II.mp3'),
+          },
         ]),
       )
     }))
@@ -173,7 +183,7 @@ describe('getActions', () => {
     testGetActions(blackSabb, [
       File.fromPath('black sabbath - black sabbath - black sabbath (1).mp3'),
       File.fromPath('black sabbath - black sabbath - the wizard (2).mp3'),
-      // File.fromPath('black sabbath - black sabbath - the wizard ii (5).mp3'), // TODO
+      File.fromPath('black sabbath - black sabbath - the wizard ii (5).mp3'),
     ])(result => {
       expect(result).toStrictEqual(
         Either.right<Error, NonEmptyArray<WriteTagsAction>>([
@@ -189,6 +199,11 @@ describe('getActions', () => {
             file: File.fromPath('black sabbath - black sabbath - the wizard (2).mp3'),
             newTags: getTags(blackSabb, imageBuffer, { number: 2, title: 'The Wizard' }),
             renameTo: File.fromPath('02 - The Wizard.mp3'),
+          },
+          {
+            file: File.fromPath('black sabbath - black sabbath - the wizard ii (5).mp3'),
+            newTags: getTags(blackSabb, imageBuffer, { number: 5, title: 'The Wizard II' }),
+            renameTo: File.fromPath('05 - The Wizard II.mp3'),
           },
         ]),
       )
@@ -216,8 +231,8 @@ describe('getActions', () => {
     testGetActions(artistIncludesAlbum, [
       File.fromPath('muezli ii - muezli - black sabbath (1).mp3'),
       File.fromPath('muezli ii - muezli - muezli (2).mp3'),
-      // File.fromPath('muezli ii - muezli - muezli v (3).mp3'), // TODO
-      // File.fromPath('muezli ii - muezli - muezli ii (4).mp3'), // TODO
+      File.fromPath('muezli ii - muezli - muezli v (3).mp3'),
+      File.fromPath('muezli ii - muezli - muezli ii (4).mp3'),
     ])(result => {
       expect(result).toStrictEqual(
         Either.right<Error, NonEmptyArray<WriteTagsAction>>([
@@ -233,6 +248,16 @@ describe('getActions', () => {
             file: File.fromPath('muezli ii - muezli - muezli (2).mp3'),
             newTags: getTags(artistIncludesAlbum, imageBuffer, { number: 2, title: 'Muezli' }),
             renameTo: File.fromPath('02 - Muezli.mp3'),
+          },
+          {
+            file: File.fromPath('muezli ii - muezli - muezli v (3).mp3'),
+            newTags: getTags(artistIncludesAlbum, imageBuffer, { number: 3, title: 'Muezli V' }),
+            renameTo: File.fromPath('03 - Muezli V.mp3'),
+          },
+          {
+            file: File.fromPath('muezli ii - muezli - muezli ii (4).mp3'),
+            newTags: getTags(artistIncludesAlbum, imageBuffer, { number: 4, title: 'Muezli II' }),
+            renameTo: File.fromPath('04 - Muezli II.mp3'),
           },
         ]),
       )
@@ -260,8 +285,8 @@ describe('getActions', () => {
     testGetActions(albumIncludesArtist, [
       File.fromPath('muezli - muezli ii - black sabbath (1).mp3'),
       File.fromPath('muezli - muezli ii - muezli (2).mp3'),
-      // File.fromPath('muezli - muezli ii - muezli v (3).mp3'), // TODO
-      // File.fromPath('muezli - muezli ii - muezli ii (4).mp3'), // TODO
+      File.fromPath('muezli - muezli ii - muezli v (3).mp3'), // TODO
+      File.fromPath('muezli - muezli ii - muezli ii (4).mp3'), // TODO
     ])(result => {
       expect(result).toStrictEqual(
         Either.right<Error, NonEmptyArray<WriteTagsAction>>([
@@ -277,6 +302,16 @@ describe('getActions', () => {
             file: File.fromPath('muezli - muezli ii - muezli (2).mp3'),
             newTags: getTags(albumIncludesArtist, imageBuffer, { number: 2, title: 'Muezli' }),
             renameTo: File.fromPath('02 - Muezli.mp3'),
+          },
+          {
+            file: File.fromPath('muezli - muezli ii - muezli v (3).mp3'),
+            newTags: getTags(albumIncludesArtist, imageBuffer, { number: 3, title: 'Muezli V' }),
+            renameTo: File.fromPath('03 - Muezli V.mp3'),
+          },
+          {
+            file: File.fromPath('muezli - muezli ii - muezli ii (4).mp3'),
+            newTags: getTags(albumIncludesArtist, imageBuffer, { number: 4, title: 'Muezli II' }),
+            renameTo: File.fromPath('04 - Muezli II.mp3'),
           },
         ]),
       )

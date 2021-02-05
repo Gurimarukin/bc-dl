@@ -4,46 +4,73 @@ import { pipe } from 'fp-ts/function'
 
 import { ExecYoutubeDl } from '../features/common'
 import { Url } from '../models/Url'
-import { Either, Future, List } from './fp'
-import { StringUtils } from './StringUtils'
+import { Console } from './Console'
+import { Either, Future, IO, List, Maybe } from './fp'
+import { StringUtils, s } from './StringUtils'
 
-type CommandOutput = {
-  readonly stdout: string | Buffer
-  readonly stderr: string | Buffer
+type ExecFailure = {
+  readonly cmd: string
+  readonly code: Maybe<number>
+  readonly stderr: string
 }
 
-type Result = Either<childProcess.ExecException, CommandOutput>
+type Result = Either<ExecFailure, string>
 
-// TODO: log output
 export const execCommand = (
   command: string,
   args: List<string> = [],
-  options?: childProcess.ExecOptions,
-): Future<Result> => {
-  const cmd = pipe([command, ...args], StringUtils.mkString(' '))
-  return Future.tryCatch(
+  onStdout: (data: string) => IO<void>,
+): Future<Result> =>
+  Future.tryCatch(
     () =>
-      new Promise<Result>(resolve =>
-        childProcess.exec(cmd, options, (error, stdout, stderr) =>
-          resolve(error !== null ? Either.left(error) : Either.right({ stdout, stderr })),
-        ),
-      ),
+      new Promise<Result>((resolve, reject) => {
+        /* eslint-disable functional/no-let, functional/no-expression-statement */
+        let stdout = ''
+        const stderr = ''
+        const child = childProcess.spawn(command, args)
+        child.stdout.on('data', data => {
+          const str = String(data)
+          stdout += str
+          pipe(onStdout(str), IO.runUnsafe)
+        })
+        child.on('error', error => reject(error))
+        child.on('close', code =>
+          resolve(
+            code === 0
+              ? Either.right(stdout)
+              : Either.left({
+                  cmd: pipe([command, ...args], StringUtils.mkString(' ')),
+                  code: Maybe.fromNullable(code),
+                  stderr,
+                }),
+          ),
+        )
+        /* eslint-enable functional/no-let, functional/no-expression-statement */
+      }),
   )
-}
 
+const newLines = /\n*$/
 export const execYoutubeDl: ExecYoutubeDl = url =>
   pipe(
-    execCommand('youtube-dl', [
-      '--extract-audio',
-      '--audio-format',
-      'mp3',
-      '--audio-quality',
-      '0',
-      pipe(url, Url.unwrap, (s: string) => JSON.stringify(s)),
-    ]),
+    execCommand(
+      'youtube-dl',
+      [
+        '--no-progress',
+        '--extract-audio',
+        '--audio-format',
+        'mp3',
+        '--audio-quality',
+        '0',
+        Url.unwrap(url),
+      ],
+      data => Console.log(data.replace(newLines, '')),
+    ),
     Future.chain(
       Either.fold(
-        e => Future.left(e),
+        e =>
+          Future.left(
+            Error(s`Command ${e.cmd} exited with code: ${Maybe.toNullable(e.code)}\n${e.stderr}`),
+          ),
         () => Future.unit,
       ),
     ),
