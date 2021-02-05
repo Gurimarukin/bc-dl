@@ -33,7 +33,16 @@ export namespace StringUtils {
 
   const irrelevantChars = /[*_\-/:'"]/g
   export const cleanForCompare = (str: string): string =>
-    cleanWhitespaces(str.normalize().toLowerCase().replace(irrelevantChars, ''))
+    cleanWhitespaces(
+      str
+        .normalize()
+        .toLowerCase()
+        // https://ampmband.bandcamp.com/album/amazing-mega-party-motherfucker-2016
+        // returns "AM -PM - AM -PM.mp3" (track 10)
+        // needs to match Track(10, "AM:PM")
+        .replace(' -', '')
+        .replace(irrelevantChars, ''),
+    )
 
   const weirdCharSometimesReturnedByBandcamp = new RegExp(s`${String.fromCharCode(8203)}+`, 'g')
   export const cleanHtml = (str: string): string =>
