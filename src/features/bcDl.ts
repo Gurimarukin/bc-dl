@@ -64,13 +64,13 @@ const downloadAlbum = (
   pipe(
     Future.Do,
 
-    logger.logWithUrl(url, 'Fetching metadata'),
+    Future.do(() => Future.fromIOEither(logger.logWithUrl(url, 'Fetching metadata'))),
     Future.bind('metadata', () => getMetadata(httpGet)(genre, url)),
 
-    logger.logWithUrl(url, 'Downloading cover'),
+    Future.do(() => Future.fromIOEither(logger.logWithUrl(url, 'Downloading cover'))),
     Future.bind('cover', ({ metadata }) => downloadCover(httpGetBuffer)(metadata.coverUrl)),
 
-    logger.logWithUrl(url, 'Downloading album'),
+    Future.do(() => Future.fromIOEither(logger.logWithUrl(url, 'Downloading album'))),
     Future.bind('albumDir', ({ metadata }) => Future.right(getAlbumDir(musicLibraryDir, metadata))),
     Future.do(({ albumDir }) => ensureAlbumDir(albumDir)),
     rmrfAlbumDirOnError(url)(({ metadata, cover, albumDir }) =>
@@ -78,7 +78,9 @@ const downloadAlbum = (
         Future.fromIOEither(FsUtils.chdir(albumDir)),
         Future.chain(() => execYoutubeDl(url)),
 
-        logger.logWithUrl(url, 'Writing tags and renaming files'),
+        Future.do(() =>
+          Future.fromIOEither(logger.logWithUrl(url, 'Writing tags and renaming files')),
+        ),
         Future.chain(() => getDownloadedMp3Files(albumDir)),
         Future.chain(mp3Files => getActions(mp3Files, albumDir, metadata, cover)),
         Future.chain(writeAllTags),

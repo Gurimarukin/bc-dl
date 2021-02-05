@@ -114,8 +114,10 @@ export const getAlbumDir = (musicLibraryDir: Dir, metadata: AlbumMetadata): Dir 
   pipe(
     musicLibraryDir,
     Dir.joinDir(
-      metadata.artist,
-      s`[${metadata.year}] ${metadata.album}${metadata.isEp ? ' (EP)' : ''}`,
+      StringUtils.cleanFileName(metadata.artist),
+      StringUtils.cleanFileName(
+        s`[${metadata.year}] ${metadata.album}${metadata.isEp ? ' (EP)' : ''}`,
+      ),
     ),
   )
 
@@ -143,7 +145,7 @@ export const rmrfAlbumDirOnError = (url: Url) => <A extends AlbumDir, B>(
         Future.recover(e =>
           pipe(
             Future.fromIOEither(
-              Console.log(s`>>> [${url}] Error - removing albumDir: ${a.albumDir.path}`),
+              logger.logWithUrl(url, s`Error - removing albumDir: ${a.albumDir.path}`),
             ),
             Future.chain(() => FsUtils.rmrf(a.albumDir)),
             Future.chain(() => Future.left(e)),
@@ -166,9 +168,9 @@ export const getWriteTagsAction = (
   renameTo: pipe(
     albumDir,
     Dir.joinFile(
-      s`${StringUtils.padNumber(track.number)} - ${StringUtils.cleanFileName(track.title)}${
-        config.mp3Extension
-      }`,
+      StringUtils.cleanFileName(
+        s`${StringUtils.padNumber(track.number)} - ${track.title}${config.mp3Extension}`,
+      ),
     ),
   ),
 })
@@ -219,17 +221,11 @@ const color = (str: string, c: string): string =>
   process.stdout.isTTY ? `\x1B[${c}m${str}\x1B[0m` : str
 
 export const logger = {
-  logWithUrl: (
-    url: Url,
-    message?: unknown,
-    ...optionalParams: List<unknown>
-  ): (<A>(fa: Future<A>) => Future<A>) =>
-    Future.do(() =>
-      Future.fromIOEither(
-        Console.log(s`[${color(Url.unwrap(url), config.colors.url)}]`, message, ...optionalParams),
-      ),
-    ),
+  logWithUrl: (url: Url, message?: unknown, ...optionalParams: List<unknown>): IO<void> =>
+    Console.log(s`[${color(Url.unwrap(url), config.colors.url)}]`, message, ...optionalParams),
+
   warnPrefix: s`[${color('WARNING', config.colors.warn)}] `,
+
   error: (message?: unknown, ...optionalParams: List<unknown>): IO<void> =>
     Console.error(color(util.format(message, ...optionalParams), config.colors.error)),
 }

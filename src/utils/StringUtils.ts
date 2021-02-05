@@ -31,7 +31,7 @@ export namespace StringUtils {
   const whitespaces = /\s+/g
   export const cleanWhitespaces = (str: string): string => str.replace(whitespaces, ' ')
 
-  const irrelevantChars = /[*_\-/:]/g
+  const irrelevantChars = /[*_\-/:'"]/g
   export const cleanForCompare = (str: string): string =>
     cleanWhitespaces(str.normalize().toLowerCase().replace(irrelevantChars, ''))
 
