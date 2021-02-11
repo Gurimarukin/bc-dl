@@ -31,7 +31,8 @@ export namespace StringUtils {
   const whitespaces = /\s+/g
   export const cleanWhitespaces = (str: string): string => str.replace(whitespaces, ' ')
 
-  const irrelevantChars = /[*_\-/:'"]/g
+  const spaceDash = / -/g
+  const irrelevantChars = /[_'\-]/g
   export const cleanForCompare = (str: string): string =>
     cleanWhitespaces(
       str
@@ -40,7 +41,8 @@ export namespace StringUtils {
         // https://ampmband.bandcamp.com/album/amazing-mega-party-motherfucker-2016
         // returns "AM -PM - AM -PM.mp3" (track 10)
         // needs to match Track(10, "AM:PM")
-        .replace(' -', '')
+        .replace(spaceDash, '')
+        .replace(fileNameForbiddenChars, '')
         .replace(irrelevantChars, ''),
     )
 

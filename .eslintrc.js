@@ -27,7 +27,7 @@ module.exports = {
     '@typescript-eslint/no-empty-function': 'off',
     '@typescript-eslint/no-explicit-any': 'error',
     '@typescript-eslint/no-unnecessary-condition': 'warn',
-    '@typescript-eslint/no-unused-vars': ['warn'],
+    '@typescript-eslint/no-unused-vars': 'warn',
     '@typescript-eslint/no-use-before-define': 'off',
     '@typescript-eslint/no-namespace': 'off',
     '@typescript-eslint/strict-boolean-expressions': [
@@ -91,7 +91,7 @@ module.exports = {
     'no-multiple-empty-lines': ['warn', { max: 1 }],
     'no-multi-spaces': 'warn',
     'no-redeclare': 'off',
-    'no-shadow': ['error', { builtinGlobals: true, hoist: 'functions' }],
+    'no-shadow': ['warn', { builtinGlobals: true, hoist: 'functions' }],
     'no-undef': 'off',
     'no-unneeded-ternary': 'warn',
     'no-use-before-define': 'off',

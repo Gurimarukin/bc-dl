@@ -20,7 +20,8 @@
     "lint-fix": "eslint --fix --cache --max-warnings 0 --ext .ts src test",
     "jest": "jest",
     "jest-coverage": "jest --ci --coverage",
-    "test": "yarn run prettier && yarn run import-sort && yarn run lint && yarn run jest"
+    "style": "yarn run prettier && yarn run import-sort && yarn run lint",
+    "test": "yarn run style && yarn run jest"
   },
   "devDependencies": {
     "@type-config/strict": "^1.1.1",
