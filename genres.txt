@@ -4,6 +4,7 @@ Chiptune
 Death Metal
 Deathcore
 Dungeon Synth
+Electro
 Folk
 Folk Metal
 Hardcore
