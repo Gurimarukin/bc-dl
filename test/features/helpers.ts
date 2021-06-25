@@ -22,52 +22,66 @@ export const cleanMusicDir = (musicDir: Dir): Future<void> =>
 
 export const httpGetMocked: HttpGet = url => {
   if (url === Url.wrap('https://inlustris.bandcamp.com/album/stella-splendens')) {
-    return readFileAndOk('stella-splendens.html')
+    return okResponseDocumentFromFile('stella-splendens.html')
   }
   if (url === Url.wrap('https://snakesofrussia.bandcamp.com/track/welcome-to-speed-castle')) {
-    return readFileAndOk('welcome-to-speed-castle.html')
+    return okResponseDocumentFromFile('welcome-to-speed-castle.html')
   }
   return Future.left(Error(`Unknown url: ${Url.unwrap(url)}`))
 }
 
-const readFileAndOk = (file: string): Future<AxiosResponse<string>> =>
+const okResponseDocumentFromFile = (file: string): Future<AxiosResponse<string>> =>
   pipe(
     FsUtils.readFile(pipe(Dir.of(__dirname), Dir.joinDir('..', 'resources'), Dir.joinFile(file))),
     Future.map(data => ({ status: 200, statusText: 'OK', headers: {}, config: {}, data })),
   )
 
-export const execYoutubeDlMocked = (mp3Dir: Dir): ExecYoutubeDl => url => {
+export const execYoutubeDlMocked: ExecYoutubeDl = url => {
   if (url === Url.wrap('https://inlustris.bandcamp.com/album/stella-splendens')) {
-    return pipe(
-      Future.Do,
-      Future.bind('mp3DirContent', () => FsUtils.readdir(mp3Dir)),
-      Future.bind('cwd', () => Future.fromIOEither(FsUtils.cwd())),
-      Future.chain(({ mp3DirContent, cwd }) =>
-        pipe(
-          mp3DirContent,
-          List.map(f =>
-            FileOrDir.isDir(f)
-              ? Future.left(Error(`Unexpected directory: ${f.path}`))
-              : FsUtils.copyFile(f, pipe(cwd, Dir.joinFile(f.basename))),
-          ),
-          Future.sequenceArray,
-        ),
-      ),
-      Future.map(() => {}),
-    )
+    return copyMp3DirContent('album')
+  }
+  if (url === Url.wrap('https://snakesofrussia.bandcamp.com/track/welcome-to-speed-castle')) {
+    return copyMp3DirContent('track')
   }
   return Future.left(Error(`Unknown url: ${Url.unwrap(url)}`))
 }
 
+const copyMp3DirContent = (dir: string): Future<void> =>
+  pipe(
+    Future.Do,
+    Future.bind('mp3DirContent', () =>
+      FsUtils.readdir(pipe(Dir.of(__dirname), Dir.joinDir('..', 'resources', 'mp3', dir))),
+    ),
+    Future.bind('cwd', () => Future.fromIOEither(FsUtils.cwd())),
+    Future.chain(({ mp3DirContent, cwd }) =>
+      pipe(
+        mp3DirContent,
+        List.map(f =>
+          FileOrDir.isDir(f)
+            ? Future.left(Error(`Unexpected directory: ${f.path}`))
+            : FsUtils.copyFile(f, pipe(cwd, Dir.joinFile(f.basename))),
+        ),
+        Future.sequenceArray,
+      ),
+    ),
+    Future.map(() => {}),
+  )
+
 export const httpGetBufferMocked: HttpGetBuffer = url => {
   if (url === Url.wrap('https://f4.bcbits.com/img/a3172027603_16.jpg')) {
-    return Future.right({
-      status: 200,
-      statusText: 'OK',
-      headers: {},
-      config: {},
-      data: Buffer.from('Image Buffer', 'utf-8'),
-    })
+    return okResponseImage('Album Image Buffer')
+  }
+  if (url === Url.wrap('https://f4.bcbits.com/img/a0539454739_16.jpg')) {
+    return okResponseImage('Track Image Buffer')
   }
   return Future.left(Error(`Unknown url: ${Url.unwrap(url)}`))
 }
+
+const okResponseImage = (image: string): Future<AxiosResponse<Buffer>> =>
+  Future.right({
+    status: 200,
+    statusText: 'OK',
+    headers: {},
+    config: {},
+    data: Buffer.from(image, 'utf-8'),
+  })

@@ -13,9 +13,8 @@ import { TagsUtils } from '../../src/utils/TagsUtils'
 import { cleanMusicDir, execYoutubeDlMocked, httpGetBufferMocked, httpGetMocked } from './helpers'
 
 const musicDir = pipe(Dir.of(__dirname), Dir.joinDir('..', 'music', 'album'))
-const mp3Dir = pipe(Dir.of(__dirname), Dir.joinDir('..', 'resources', 'mp3', 'album'))
 
-const imageBuffer = Buffer.from('Image Buffer', 'utf-8')
+const imageBuffer = Buffer.from('Album Image Buffer', 'utf-8')
 
 describe('getMetadata - album', () => {
   it('should get metadata', () =>
@@ -47,7 +46,7 @@ describe('getMetadata - album', () => {
     ))
 })
 
-describe('getActions - album', () => {
+describe('getActions', () => {
   const testGetActions = (metadata: AlbumMetadata, mp3Files: NonEmptyArray<File>) => (
     // eslint-disable-next-line functional/no-return-void
     f: (result: Either<Error, NonEmptyArray<WriteTagsAction>>) => void,
@@ -370,7 +369,7 @@ describe.only('e2e - album', () => {
         [musicDir.path, 'Dungeon Synth', 'https://inlustris.bandcamp.com/album/stella-splendens'],
         httpGetMocked,
         httpGetBufferMocked,
-        execYoutubeDlMocked(mp3Dir),
+        execYoutubeDlMocked,
       ),
       Future.chain(() => {
         const albumDir = pipe(musicDir, Dir.joinDir('Inlustris', '[2020] Stella Splendens'))
