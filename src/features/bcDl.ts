@@ -172,7 +172,7 @@ const cleanFileNames = (
   const deletions = pipe(
     [
       StringUtils.cleanForCompare(metadata.artist),
-      pipe(metadata.album, Album.unwrap, StringUtils.cleanForCompare),
+      pipe(metadata.album, Album.stringify, StringUtils.cleanForCompare),
     ],
     List.sort(ordStringLength),
   )

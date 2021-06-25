@@ -3,7 +3,7 @@ import util from 'util'
 import { AxiosResponse } from 'axios'
 import { Command, Opts, codecToDecode } from 'decline-ts'
 import { apply } from 'fp-ts'
-import { identity, not, pipe } from 'fp-ts/function'
+import { flow, identity, not, pipe } from 'fp-ts/function'
 import NodeID3 from 'node-id3'
 
 import { config } from '../config'
@@ -123,8 +123,8 @@ const getFromDocument = (
 const albumRegex = /(https?:\/\/)?[^\.]+\.bandcamp.com\/album\/.+/
 const trackRegex = /(https?:\/\/)?[^\.]+\.bandcamp.com\/track\/.+/
 
-const isAlbum = (url: Url): boolean => albumRegex.test(Url.unwrap(url))
-const isTrack = (url: Url): boolean => trackRegex.test(Url.unwrap(url))
+const isAlbum: (url: Url) => boolean = flow(Url.unwrap, StringUtils.matches(albumRegex))
+const isTrack: (url: Url) => boolean = flow(Url.unwrap, StringUtils.matches(trackRegex))
 
 export const downloadCover = (httpGetBuffer: HttpGetBuffer) => (coverUrl: Url): Future<Buffer> =>
   pipe(
@@ -137,9 +137,7 @@ export const getAlbumDir = (musicLibraryDir: Dir, metadata: AlbumMetadata): Dir 
     musicLibraryDir,
     Dir.joinDir(
       StringUtils.cleanFileName(metadata.artist),
-      StringUtils.cleanFileName(
-        `[${metadata.year}] ${Album.unwrap(metadata.album)}${metadata.isEp ? ' (EP)' : ''}`,
-      ),
+      StringUtils.cleanFileName(`[${metadata.year}] ${Album.stringify(metadata.album)}`),
     ),
   )
 
@@ -205,7 +203,7 @@ export const getTags = (
 ): NodeID3.Tags => ({
   title: track.title,
   artist: metadata.artist,
-  album: Album.unwrap(metadata.album),
+  album: Album.stringify(metadata.album),
   year: `${metadata.year}`,
   trackNumber: `${track.number}`,
   genre: Genre.unwrap(metadata.genre),
@@ -237,7 +235,7 @@ export const isMp3File = (file: File): boolean =>
   file.basename.toLowerCase().endsWith(config.mp3Extension)
 
 export const prettyTrackInfo = (metadata: AlbumMetadata) => (track: AlbumMetadata.Track): string =>
-  `${metadata.artist} - ${Album.unwrap(metadata.album)} - ${StringUtils.padNumber(track.number)} ${
+  `${metadata.artist} - ${metadata.album.name} - ${StringUtils.padNumber(track.number)} ${
     track.title
   }`
 

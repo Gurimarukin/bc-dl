@@ -21,17 +21,17 @@ describe('EP regex', () => {
     )
     expect(pipe('Deep in the Woods EP .', StringUtils.matches(config.epRegex))).toStrictEqual(true)
 
-    expect(Album.withoutEp(Album.wrap('Deep in the Woods E.P.'))).toStrictEqual(
-      Album.wrap('Deep in the Woods'),
+    expect(Album.fromRaw({ isTrack: false })('Deep in the Woods E.P.').name).toStrictEqual(
+      'Deep in the Woods',
     )
-    expect(Album.withoutEp(Album.wrap('Deep in the Woods EP'))).toStrictEqual(
-      Album.wrap('Deep in the Woods'),
+    expect(Album.fromRaw({ isTrack: false })('Deep in the Woods EP').name).toStrictEqual(
+      'Deep in the Woods',
     )
-    expect(Album.withoutEp(Album.wrap('Deep in the Woods E . P .'))).toStrictEqual(
-      Album.wrap('Deep in the Woods'),
+    expect(Album.fromRaw({ isTrack: false })('Deep in the Woods E . P .').name).toStrictEqual(
+      'Deep in the Woods',
     )
-    expect(Album.withoutEp(Album.wrap('Deep in the Woods EP .'))).toStrictEqual(
-      Album.wrap('Deep in the Woods'),
+    expect(Album.fromRaw({ isTrack: false })('Deep in the Woods EP .').name).toStrictEqual(
+      'Deep in the Woods',
     )
   })
 })
@@ -49,10 +49,9 @@ describe('AlbumMetadata', () => {
         expect(Either.isRight(result)).toStrictEqual(true)
 
         const metadata = (result as Right<AlbumMetadata>).right
-        expect(metadata).toStrictEqual({
+        expect(metadata).toStrictEqual<AlbumMetadata>({
           artist: 'Druids of the Gue Charette',
-          album: Album.wrap('Deep in the Woods'),
-          isEp: true,
+          album: { name: 'Deep in the Woods', type: 'EP' },
           year: 2015,
           genre: Genre.wrap('Stoner'),
           tracks: [
@@ -79,10 +78,9 @@ describe('AlbumMetadata', () => {
         expect(Either.isRight(result)).toStrictEqual(true)
 
         const metadata = (result as Right<AlbumMetadata>).right
-        expect(metadata).toStrictEqual({
+        expect(metadata).toStrictEqual<AlbumMetadata>({
           artist: 'Druids of the Gue Charette',
-          album: Album.wrap('Talking To The Moon'),
-          isEp: false,
+          album: { name: 'Talking To The Moon', type: 'LP' },
           year: 2020,
           genre: Genre.wrap('Stoner'),
           tracks: [

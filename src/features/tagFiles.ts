@@ -179,10 +179,7 @@ const trackMatchesTags = (metadata: AlbumMetadata, track: AlbumMetadata.Track) =
 ]: FileWithTags): boolean =>
   (almostEquals(metadata.artist, tags.artist) ||
     almostEquals(metadata.artist, tags.performerInfo)) &&
-  almostEquals(
-    Album.unwrap(metadata.album),
-    metadata.isEp ? pipe(Album.wrap(tags.album), Album.withoutEp, Album.unwrap) : tags.album,
-  ) &&
+  almostEquals(metadata.album.name, Album.fromRaw({ isTrack: false })(tags.album).name) &&
   track.number === Number(tags.trackNumber)
 
 const almostEquals = (a: string, b: string): boolean =>

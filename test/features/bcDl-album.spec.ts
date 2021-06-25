@@ -2,7 +2,6 @@ import { flow, pipe } from 'fp-ts/function'
 
 import { bcDl, getActions, ordStringLength } from '../../src/features/bcDl'
 import { getMetadata, getTags } from '../../src/features/common'
-import { Album } from '../../src/models/Album'
 import { AlbumMetadata } from '../../src/models/AlbumMetadata'
 import { Dir, File, FileOrDir } from '../../src/models/FileOrDir'
 import { Genre } from '../../src/models/Genre'
@@ -28,10 +27,9 @@ describe('getMetadata - album', () => {
       Future.map(result => {
         const expected: AlbumMetadata = {
           artist: 'Inlustris',
-          album: Album.wrap('Stella Splendens'),
+          album: { name: 'Stella Splendens', type: 'LP' },
           year: 2020,
           genre: Genre.wrap('Dungeon Synth'),
-          isEp: false,
           tracks: [
             { number: 1, title: 'Ave Gloriosa' },
             { number: 2, title: 'Morena Me Llaman' },
@@ -69,8 +67,7 @@ describe('getActions - album', () => {
    */
   const blackSabb: AlbumMetadata = {
     artist: 'Black Sabbath',
-    album: Album.wrap('Black Sabbath'),
-    isEp: false,
+    album: { name: 'Black Sabbath', type: 'LP' },
     year: 1970,
     genre: Genre.wrap('Heavy Metal'),
     tracks: [
@@ -208,8 +205,7 @@ describe('getActions - album', () => {
    */
   const artistIncludesAlbum: AlbumMetadata = {
     artist: 'Muezli II',
-    album: Album.wrap('Muezli'),
-    isEp: false,
+    album: { name: 'Muezli', type: 'LP' },
     year: 1970,
     genre: Genre.wrap('Heavy Metal'),
     tracks: [
@@ -262,8 +258,7 @@ describe('getActions - album', () => {
    */
   const albumIncludesArtist: AlbumMetadata = {
     artist: 'Muezli',
-    album: Album.wrap('Muezli II'),
-    isEp: false,
+    album: { name: 'Muezli II', type: 'LP' },
     year: 1970,
     genre: Genre.wrap('Heavy Metal'),
     tracks: [
@@ -316,8 +311,7 @@ describe('getActions - album', () => {
    */
   const albumArtistDifferent: AlbumMetadata = {
     artist: 'Artist',
-    album: Album.wrap('Album'),
-    isEp: false,
+    album: { name: 'Album', type: 'LP' },
     year: 1970,
     genre: Genre.wrap('Heavy Metal'),
     tracks: [
@@ -365,7 +359,8 @@ describe('ordStringLength', () => {
   })
 })
 
-describe('e2e - album', () => {
+// eslint-disable-next-line functional/no-expression-statement
+describe.only('e2e - album', () => {
   beforeEach(() => pipe(cleanMusicDir(musicDir), Future.runUnsafe))
   afterEach(() => pipe(cleanMusicDir(musicDir), Future.runUnsafe))
 

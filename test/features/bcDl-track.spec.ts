@@ -30,21 +30,12 @@ describe('getMetadata - track', () => {
       ),
       Future.map(result => {
         const expected: AlbumMetadata = {
-          artist: 'Inlustris',
-          album: Album.wrap('Stella Splendens'),
-          year: 2020,
-          genre: Genre.wrap('Dungeon Synth'),
-          isEp: false,
-          tracks: [
-            { number: 1, title: 'Ave Gloriosa' },
-            { number: 2, title: 'Morena Me Llaman' },
-            { number: 3, title: 'Ecco La Primavera' },
-            { number: 4, title: 'Gaudens In Domino' },
-            { number: 5, title: 'Como Somos Per Consello CSM 119' },
-            { number: 6, title: 'Santa Maria, Strela Do Dia CSM 100' },
-            { number: 7, title: 'Stella Splendens' },
-          ],
-          coverUrl: Url.wrap('https://f4.bcbits.com/img/a3172027603_16.jpg'),
+          artist: 'Snakes Of Russia',
+          album: { name: 'Welcome To Speed Castle', type: 'Track' },
+          year: 2019,
+          genre: Genre.wrap('Electro'),
+          tracks: [{ number: 1, title: 'Welcome To Speed Castle' }],
+          coverUrl: Url.wrap('https://f4.bcbits.com/img/a0539454739_16.jpg'),
         }
         expect(result).toStrictEqual(expected)
       }),

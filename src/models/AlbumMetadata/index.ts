@@ -23,13 +23,11 @@ export namespace AlbumMetadata {
     album,
     year,
     genre,
-    isEp,
     tracks,
     coverUrl,
   }: AlbumMetadata): string =>
-    `AlbumMetadata(${artist}, ${Album.unwrap(album)}, ${year}, ${Genre.unwrap(
-      genre,
-    )}, ${isEp}, ${pipe(tracks, NonEmptyArray.stringify(Track.stringify))}, ${Url.unwrap(
-      coverUrl,
-    )})`
+    `AlbumMetadata(${artist}, ${Album.stringify(album)}, ${year}, ${Genre.unwrap(genre)}, ${pipe(
+      tracks,
+      NonEmptyArray.stringify(Track.stringify),
+    )}, ${Url.unwrap(coverUrl)})`
 }

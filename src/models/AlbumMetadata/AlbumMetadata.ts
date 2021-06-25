@@ -7,7 +7,6 @@ import { Track } from './Track'
 export type AlbumMetadata = {
   readonly artist: string
   readonly album: Album
-  readonly isEp: boolean
   readonly year: number
   readonly genre: Genre
   readonly tracks: NonEmptyArray<Track>
