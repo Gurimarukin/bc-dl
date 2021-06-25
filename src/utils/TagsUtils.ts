@@ -3,13 +3,12 @@ import NodeID3 from 'node-id3'
 
 import { File } from '../models/FileOrDir'
 import { Future } from './fp'
-import { s } from './StringUtils'
 
 export namespace TagsUtils {
   export const read = (file: File): Future<NodeID3.Tags> =>
     pipe(
       Future.tryCatch(() => NodeID3.Promise.read(file.path)),
-      Future.recover(e => Future.left(Error(s`TagsUtils.read ${e.toString()}`))),
+      Future.recover(e => Future.left(Error(`TagsUtils.read ${e}`))),
     )
 
   export const write = (tags: NodeID3.Tags, file: File): Future<void> =>

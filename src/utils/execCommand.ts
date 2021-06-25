@@ -6,7 +6,7 @@ import { ExecYoutubeDl } from '../features/common'
 import { Url } from '../models/Url'
 import { Console } from './Console'
 import { Either, Future, IO, List, Maybe } from './fp'
-import { StringUtils, s } from './StringUtils'
+import { StringUtils } from './StringUtils'
 
 type ExecFailure = {
   readonly cmd: string
@@ -69,7 +69,7 @@ export const execYoutubeDl: ExecYoutubeDl = url =>
       Either.fold(
         e =>
           Future.left(
-            Error(s`Command ${e.cmd} exited with code: ${Maybe.toNullable(e.code)}\n${e.stderr}`),
+            Error(`Command ${e.cmd} exited with code: ${Maybe.toNullable(e.code)}\n${e.stderr}`),
           ),
         () => Future.unit,
       ),

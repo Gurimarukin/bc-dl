@@ -16,7 +16,6 @@ import { Monad1, Monad2 } from 'fp-ts/Monad'
 import * as C from 'io-ts/Codec'
 import * as D from 'io-ts/Decoder'
 import { Encoder } from 'io-ts/Encoder'
-import { Newtype } from 'newtype-ts'
 
 export const todo = (...[]: List<unknown>): never => {
   // eslint-disable-next-line functional/no-throw-statement
@@ -142,17 +141,6 @@ function getDo2<F extends URIS2>(m: Monad2<F>) {
  * StringUtils, but we have to avoid cyclic dependency :/
  */
 
-type NiceStringDefault = string | number | boolean | undefined | null
-type NiceString = NiceStringDefault | Newtype<unknown, NiceStringDefault>
-
-// interpolates.length is always strings.length - 1
-export const s_ = (strings: TemplateStringsArray, ...interpolates: List<NiceString>): string =>
-  pipe(
-    strings,
-    List.zip(List.snoc(interpolates, '')),
-    List.reduce('', (acc, [a, b]) => `${acc}${a}${b}`),
-  )
-
 export function mkString_(sep: string): (list: List<string>) => string
 export function mkString_(start: string, sep: string, end: string): (list: List<string>) => string
 export function mkString_(
@@ -162,6 +150,6 @@ export function mkString_(
 ): (list: List<string>) => string {
   return list =>
     sep !== undefined && end !== undefined
-      ? s_`${startOrSep}${list.join(sep)}${end}`
+      ? `${startOrSep}${list.join(sep)}${end}`
       : list.join(startOrSep)
 }

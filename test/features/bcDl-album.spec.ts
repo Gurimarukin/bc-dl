@@ -1,13 +1,7 @@
 import { flow, pipe } from 'fp-ts/function'
 
 import { bcDl, getActions, ordStringLength } from '../../src/features/bcDl'
-import {
-  ExecYoutubeDl,
-  HttpGet,
-  HttpGetBuffer,
-  getMetadata,
-  getTags,
-} from '../../src/features/common'
+import { getMetadata, getTags } from '../../src/features/common'
 import { Album } from '../../src/models/Album'
 import { AlbumMetadata } from '../../src/models/AlbumMetadata'
 import { Dir, File, FileOrDir } from '../../src/models/FileOrDir'
@@ -16,15 +10,15 @@ import { Url } from '../../src/models/Url'
 import { WriteTagsAction } from '../../src/models/WriteTagsAction'
 import { Either, Future, List, NonEmptyArray, Tuple } from '../../src/utils/fp'
 import { FsUtils } from '../../src/utils/FsUtils'
-import { s } from '../../src/utils/StringUtils'
 import { TagsUtils } from '../../src/utils/TagsUtils'
+import { cleanMusicDir, execYoutubeDlMocked, httpGetBufferMocked, httpGetMocked } from './helpers'
 
-const musicDir = pipe(Dir.of(__dirname), Dir.joinDir('..', 'music'))
-const mp3Dir = pipe(Dir.of(__dirname), Dir.joinDir('..', 'resources', 'mp3'))
+const musicDir = pipe(Dir.of(__dirname), Dir.joinDir('..', 'music', 'album'))
+const mp3Dir = pipe(Dir.of(__dirname), Dir.joinDir('..', 'resources', 'mp3', 'album'))
 
 const imageBuffer = Buffer.from('Image Buffer', 'utf-8')
 
-describe('getMetadata', () => {
+describe('getMetadata - album', () => {
   it('should get metadata', () =>
     pipe(
       getMetadata(httpGetMocked)(
@@ -55,7 +49,7 @@ describe('getMetadata', () => {
     ))
 })
 
-describe('getActions', () => {
+describe('getActions - album', () => {
   const testGetActions = (metadata: AlbumMetadata, mp3Files: NonEmptyArray<File>) => (
     // eslint-disable-next-line functional/no-return-void
     f: (result: Either<Error, NonEmptyArray<WriteTagsAction>>) => void,
@@ -371,17 +365,17 @@ describe('ordStringLength', () => {
   })
 })
 
-describe('e2e', () => {
-  beforeEach(() => pipe(cleanMusicDir(), Future.runUnsafe))
-  afterEach(() => pipe(cleanMusicDir(), Future.runUnsafe))
+describe('e2e - album', () => {
+  beforeEach(() => pipe(cleanMusicDir(musicDir), Future.runUnsafe))
+  afterEach(() => pipe(cleanMusicDir(musicDir), Future.runUnsafe))
 
   it('should e2e', () =>
     pipe(
       bcDl(
-        ['test/music', 'Dungeon Synth', 'https://inlustris.bandcamp.com/album/stella-splendens'],
+        [musicDir.path, 'Dungeon Synth', 'https://inlustris.bandcamp.com/album/stella-splendens'],
         httpGetMocked,
         httpGetBufferMocked,
-        execYoutubeDlMocked,
+        execYoutubeDlMocked(mp3Dir),
       ),
       Future.chain(() => {
         const albumDir = pipe(musicDir, Dir.joinDir('Inlustris', '[2020] Stella Splendens'))
@@ -537,63 +531,3 @@ describe('e2e', () => {
       Future.runUnsafe,
     ))
 })
-
-const cleanMusicDir = (): Future<void> =>
-  pipe(
-    FsUtils.readdir(musicDir),
-    Future.chain(
-      flow(
-        List.map(f => (FileOrDir.isDir(f) ? FsUtils.rmdir(f, { recursive: true }) : Future.unit)),
-        Future.sequenceArray,
-      ),
-    ),
-    Future.map(() => {}),
-  )
-
-const httpGetMocked: HttpGet = url => {
-  if (url === Url.wrap('https://inlustris.bandcamp.com/album/stella-splendens')) {
-    return pipe(
-      FsUtils.readFile(
-        pipe(Dir.of(__dirname), Dir.joinFile('..', 'resources', 'stella-splendens.html')),
-      ),
-      Future.map(data => ({ status: 200, statusText: 'OK', headers: {}, config: {}, data })),
-    )
-  }
-  return Future.left(Error(s`Unknown url: ${url}`))
-}
-
-const execYoutubeDlMocked: ExecYoutubeDl = url => {
-  if (url === Url.wrap('https://inlustris.bandcamp.com/album/stella-splendens')) {
-    return pipe(
-      Future.Do,
-      Future.bind('mp3DirContent', () => FsUtils.readdir(mp3Dir)),
-      Future.bind('cwd', () => Future.fromIOEither(FsUtils.cwd())),
-      Future.chain(({ mp3DirContent, cwd }) =>
-        pipe(
-          mp3DirContent,
-          List.map(f =>
-            FileOrDir.isDir(f)
-              ? Future.left(Error(s`Unexpected directory: ${f.path}`))
-              : FsUtils.copyFile(f, pipe(cwd, Dir.joinFile(f.basename))),
-          ),
-          Future.sequenceArray,
-        ),
-      ),
-      Future.map(() => {}),
-    )
-  }
-  return Future.left(Error(s`Unknown url: ${url}`))
-}
-
-const httpGetBufferMocked: HttpGetBuffer = url => {
-  if (url === Url.wrap('https://f4.bcbits.com/img/a3172027603_16.jpg')) {
-    return Future.right({
-      status: 200,
-      statusText: 'OK',
-      headers: {},
-      config: {},
-      data: Buffer.from('Image Buffer', 'utf-8'),
-    })
-  }
-  return Future.left(Error(s`Unknown url: ${url}`))
-}

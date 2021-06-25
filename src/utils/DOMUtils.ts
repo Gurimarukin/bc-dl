@@ -2,7 +2,7 @@ import { not, pipe } from 'fp-ts/function'
 import { DOMWindow, JSDOM } from 'jsdom'
 
 import { Either } from './fp'
-import { StringUtils, s } from './StringUtils'
+import { StringUtils } from './StringUtils'
 
 const { window } = new JSDOM()
 
@@ -37,13 +37,13 @@ export namespace DOMUtils {
       const res = parent.querySelectorAll(selector)
       const elt = res[0]
 
-      if (elt === undefined) return Either.left(s`No element matches selector: ${selector}`)
-      if (1 < res.length) return Either.left(s`More than one element matches selector: ${selector}`)
+      if (elt === undefined) return Either.left(`No element matches selector: ${selector}`)
+      if (1 < res.length) return Either.left(`More than one element matches selector: ${selector}`)
 
       if (type === undefined) return Either.right(elt)
       if (!(elt instanceof type)) return Either.right(elt)
 
-      return Either.left(s`Element don't have expected type: ${type.name}`)
+      return Either.left(`Element don't have expected type: ${type.name}`)
     }
   }
 
@@ -54,13 +54,13 @@ export namespace DOMUtils {
       Either.chain(elt =>
         pipe(
           elt.textContent,
-          Either.fromNullable(s`No textContent for element: ${selector}`),
+          Either.fromNullable(`No textContent for element: ${selector}`),
           Either.map(StringUtils.cleanHtml),
         ),
       ),
       Either.filterOrElse(
         not(looksLikeHTMLTag),
-        str => s`textContent looks like an HTML tag and this might be a problem: ${str}`,
+        str => `textContent looks like an HTML tag and this might be a problem: ${str}`,
       ),
     )
   const looksLikeHTMLTag = (str: string): boolean => str.startsWith('<') && str.endsWith('/>')

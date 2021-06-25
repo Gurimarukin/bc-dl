@@ -24,6 +24,7 @@ module.exports = {
         allowHigherOrderFunctions: true,
       },
     ],
+    '@typescript-eslint/no-base-to-string': ['error', { ignoredTypeNames: 'Error' }],
     '@typescript-eslint/no-empty-function': 'off',
     '@typescript-eslint/no-explicit-any': 'error',
     '@typescript-eslint/no-unnecessary-condition': 'warn',

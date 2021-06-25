@@ -15,7 +15,7 @@ import { decodeError } from '../utils/decodeError'
 import { Either, Future, IO, List, NonEmptyArray, Tuple } from '../utils/fp'
 import { FsUtils } from '../utils/FsUtils'
 import { listFoldLength } from '../utils/listFoldLength'
-import { StringUtils, s } from '../utils/StringUtils'
+import { StringUtils } from '../utils/StringUtils'
 import {
   CmdArgs,
   ExecYoutubeDl,
@@ -100,7 +100,7 @@ const getDownloadedMp3Files = (albumDir: Dir): Future<NonEmptyArray<File>> =>
       flow(
         List.traverse(Validation.applicativeValidation)(getMp3File),
         Either.mapLeft(e =>
-          Error(s`Errors while listing mp3 files:\n${pipe(e, StringUtils.mkString('\n'))}`),
+          Error(`Errors while listing mp3 files:\n${pipe(e, StringUtils.mkString('\n'))}`),
         ),
         Future.fromEither,
       ),
@@ -115,8 +115,8 @@ const getDownloadedMp3Files = (albumDir: Dir): Future<NonEmptyArray<File>> =>
   )
 
 const getMp3File = (f: FileOrDir): Validation<File> => {
-  if (FileOrDir.isDir(f)) return Either.left(NonEmptyArray.of(s`Unexpected directory: ${f.path}`))
-  if (!isMp3File(f)) return Either.left(NonEmptyArray.of(s`Non mp3 file: ${f.path}`))
+  if (FileOrDir.isDir(f)) return Either.left(NonEmptyArray.of(`Unexpected directory: ${f.path}`))
+  if (!isMp3File(f)) return Either.left(NonEmptyArray.of(`Non mp3 file: ${f.path}`))
   return Either.right(f)
 }
 
@@ -136,15 +136,15 @@ export const getActions = (
         Either.mapLeft(errors =>
           Error(
             StringUtils.stripMargins(
-              s`Failed to find track matching files:
-               |${pipe(errors, StringUtils.mkString('\n'))}
-               |
-               |Considered tracks:
-               |${pipe(
-                 metadata.tracks,
-                 NonEmptyArray.map(prettyTrackInfo(metadata)),
-                 StringUtils.mkString('\n'),
-               )}`,
+              `Failed to find track matching files:
+              |${pipe(errors, StringUtils.mkString('\n'))}
+              |
+              |Considered tracks:
+              |${pipe(
+                metadata.tracks,
+                NonEmptyArray.map(prettyTrackInfo(metadata)),
+                StringUtils.mkString('\n'),
+              )}`,
             ),
           ),
         ),
@@ -233,12 +233,12 @@ const logMoreThanOne = (
 ): IO<void> =>
   Console.log(
     StringUtils.stripMargins(
-      s`${logger.warnPrefix}Found more that one track matching file: ${file.path}
-       |${logger.warnPrefix}Picked ${AlbumMetadata.Track.stringify(res)}
-       |${pipe(
-         tracks,
-         NonEmptyArray.map(t => s`${logger.warnPrefix}- ${AlbumMetadata.Track.stringify(t)}`),
-         StringUtils.mkString('\n'),
-       )}`,
+      `${logger.warnPrefix}Found more that one track matching file: ${file.path}
+      |${logger.warnPrefix}Picked ${AlbumMetadata.Track.stringify(res)}
+      |${pipe(
+        tracks,
+        NonEmptyArray.map(t => `${logger.warnPrefix}- ${AlbumMetadata.Track.stringify(t)}`),
+        StringUtils.mkString('\n'),
+      )}`,
     ),
   )

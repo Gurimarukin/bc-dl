@@ -1,8 +1,6 @@
 import * as D from 'io-ts/Decoder'
 import NodeID3 from 'node-id3'
 
-import { s } from '../utils/StringUtils'
-
 export type DefinedTags = Required<
   Pick<NodeID3.Tags, 'title' | 'artist' | 'album' | 'year' | 'trackNumber' | 'performerInfo'>
 >
@@ -25,5 +23,5 @@ export namespace DefinedTags {
     trackNumber,
     performerInfo,
   }: DefinedTags): string =>
-    s`DefinedTags(${title}, ${artist}, ${album}, ${year}, ${trackNumber}, ${performerInfo})`
+    `DefinedTags(${title}, ${artist}, ${album}, ${year}, ${trackNumber}, ${performerInfo})`
 }

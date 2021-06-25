@@ -17,7 +17,7 @@ import { Console } from '../utils/Console'
 import { DOMUtils } from '../utils/DOMUtils'
 import { Either, Future, IO, List, Maybe, NonEmptyArray } from '../utils/fp'
 import { FsUtils } from '../utils/FsUtils'
-import { StringUtils, s } from '../utils/StringUtils'
+import { StringUtils } from '../utils/StringUtils'
 import { TagsUtils } from '../utils/TagsUtils'
 
 export type HttpGet = (url: Url) => Future<AxiosResponse<string>>
@@ -66,7 +66,11 @@ export const parseCommand = (cmd: CmdArgs, argv: List<string>): Future<Args> =>
       pipe(genres, List.elem(Genre.eq)(args.genre))
         ? Future.fromIOEither(pipe(cwd, Dir.resolveDir(args.musicLibraryDir)))
         : Future.left(
-            Error(s`Unknown genre "${args.genre}" (add it to file ${config.genresTxt.path})`),
+            Error(
+              `Unknown genre "${Genre.unwrap(args.genre)}" (add it to file ${
+                config.genresTxt.path
+              })`,
+            ),
           ),
     ),
     Future.map(({ args, musicLibraryDir }) => ({ ...args, musicLibraryDir })),
@@ -83,7 +87,7 @@ const getGenres = (): Future<NonEmptyArray<Genre>> =>
           return StringUtils.isNonEmpty(trimed) ? Maybe.some(Genre.wrap(trimed)) : Maybe.none
         }),
         NonEmptyArray.fromReadonlyArray,
-        Either.fromOption(() => Error(s`Genres file shouldn't be empty: ${config.genresTxt.path}`)),
+        Either.fromOption(() => Error(`Genres file shouldn't be empty: ${config.genresTxt.path}`)),
         Future.fromEither,
       ),
     ),
@@ -91,18 +95,36 @@ const getGenres = (): Future<NonEmptyArray<Genre>> =>
 
 export const getMetadata = (httpGet: HttpGet) => (genre: Genre, url: Url): Future<AlbumMetadata> =>
   pipe(
-    httpGet(url),
-    Future.chain(({ data }) =>
+    Future.Do,
+    Future.bind('fromDocument', () => getFromDocument(url)),
+    Future.bind('response', () => httpGet(url)),
+    Future.chain(({ fromDocument, response: { data } }) =>
       pipe(
         DOMUtils.documentFromHtml(data),
-        AlbumMetadata.fromDocument(genre),
+        fromDocument(genre),
         Either.mapLeft(e =>
-          Error(s`Errors while parsing AlbumMetadata:\n${pipe(e, StringUtils.mkString('\n'))}`),
+          Error(`Errors while parsing AlbumMetadata:\n${pipe(e, StringUtils.mkString('\n'))}`),
         ),
         Future.fromEither,
       ),
     ),
   )
+
+const getFromDocument = (
+  url: Url,
+): Future<
+  (genre: Genre) => (document: DOMUtils.Document) => Either<NonEmptyArray<string>, AlbumMetadata>
+> => {
+  if (isAlbum(url)) return Future.right(AlbumMetadata.fromAlbumDocument)
+  if (isTrack(url)) return Future.right(AlbumMetadata.fromTrackDocument)
+  return Future.left(Error(`Url was not recognized as album nor track: ${Url.unwrap(url)}`))
+}
+
+const albumRegex = /(https?:\/\/)?[^\.]+\.bandcamp.com\/album\/.+/
+const trackRegex = /(https?:\/\/)?[^\.]+\.bandcamp.com\/track\/.+/
+
+const isAlbum = (url: Url): boolean => albumRegex.test(Url.unwrap(url))
+const isTrack = (url: Url): boolean => trackRegex.test(Url.unwrap(url))
 
 export const downloadCover = (httpGetBuffer: HttpGetBuffer) => (coverUrl: Url): Future<Buffer> =>
   pipe(
@@ -116,7 +138,7 @@ export const getAlbumDir = (musicLibraryDir: Dir, metadata: AlbumMetadata): Dir 
     Dir.joinDir(
       StringUtils.cleanFileName(metadata.artist),
       StringUtils.cleanFileName(
-        s`[${metadata.year}] ${metadata.album}${metadata.isEp ? ' (EP)' : ''}`,
+        `[${metadata.year}] ${Album.unwrap(metadata.album)}${metadata.isEp ? ' (EP)' : ''}`,
       ),
     ),
   )
@@ -125,7 +147,7 @@ export const ensureAlbumDir = (albumDir: Dir): Future<void> =>
   pipe(
     FsUtils.exists(albumDir),
     Future.filterOrElse(not(identity), () =>
-      Error(s`Album directory already exists, this might be an error: ${albumDir.path}`),
+      Error(`Album directory already exists, this might be an error: ${albumDir.path}`),
     ),
     Future.chain(() => FsUtils.mkdir(albumDir, { recursive: true })),
   )
@@ -145,7 +167,7 @@ export const rmrfAlbumDirOnError = (url: Url) => <A extends AlbumDir, B>(
         Future.recover(e =>
           pipe(
             Future.fromIOEither(
-              logger.logWithUrl(url, s`Error - removing albumDir: ${a.albumDir.path}`),
+              logger.logWithUrl(url, `Error - removing albumDir: ${a.albumDir.path}`),
             ),
             Future.chain(() => FsUtils.rmrf(a.albumDir)),
             Future.chain(() => Future.left(e)),
@@ -169,7 +191,7 @@ export const getWriteTagsAction = (
     albumDir,
     Dir.joinFile(
       StringUtils.cleanFileName(
-        s`${StringUtils.padNumber(track.number)} - ${track.title}${config.mp3Extension}`,
+        `${StringUtils.padNumber(track.number)} - ${track.title}${config.mp3Extension}`,
       ),
     ),
   ),
@@ -184,8 +206,8 @@ export const getTags = (
   title: track.title,
   artist: metadata.artist,
   album: Album.unwrap(metadata.album),
-  year: s`${metadata.year}`,
-  trackNumber: s`${track.number}`,
+  year: `${metadata.year}`,
+  trackNumber: `${track.number}`,
   genre: Genre.unwrap(metadata.genre),
   // comment: { language: 'eng', text: Url.unwrap(url) }, // seems bugged
   performerInfo: metadata.artist,
@@ -215,16 +237,18 @@ export const isMp3File = (file: File): boolean =>
   file.basename.toLowerCase().endsWith(config.mp3Extension)
 
 export const prettyTrackInfo = (metadata: AlbumMetadata) => (track: AlbumMetadata.Track): string =>
-  s`${metadata.artist} - ${metadata.album} - ${StringUtils.padNumber(track.number)} ${track.title}`
+  `${metadata.artist} - ${Album.unwrap(metadata.album)} - ${StringUtils.padNumber(track.number)} ${
+    track.title
+  }`
 
 const color = (str: string, c: string): string =>
   process.stdout.isTTY ? `\x1B[${c}m${str}\x1B[0m` : str
 
 export const logger = {
   logWithUrl: (url: Url, message?: unknown, ...optionalParams: List<unknown>): IO<void> =>
-    Console.log(s`[${color(Url.unwrap(url), config.colors.url)}]`, message, ...optionalParams),
+    Console.log(`[${color(Url.unwrap(url), config.colors.url)}]`, message, ...optionalParams),
 
-  warnPrefix: s`[${color('WARNING', config.colors.warn)}] `,
+  warnPrefix: `[${color('WARNING', config.colors.warn)}] `,
 
   error: (message?: unknown, ...optionalParams: List<unknown>): IO<void> =>
     Console.error(color(util.format(message, ...optionalParams), config.colors.error)),

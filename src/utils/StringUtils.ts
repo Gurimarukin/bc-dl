@@ -1,8 +1,6 @@
 import { flow, not, pipe } from 'fp-ts/function'
 
-import { Maybe, mkString_, s_ } from './fp'
-
-export const s = s_
+import { Maybe, mkString_ } from './fp'
 
 export namespace StringUtils {
   export const isEmpty = (str: string): str is '' => str === ''
@@ -46,7 +44,7 @@ export namespace StringUtils {
         .replace(irrelevantChars, ''),
     )
 
-  const weirdCharSometimesReturnedByBandcamp = new RegExp(s`${String.fromCharCode(8203)}+`, 'g')
+  const weirdCharSometimesReturnedByBandcamp = new RegExp(`${String.fromCharCode(8203)}+`, 'g')
   export const cleanHtml = (str: string): string =>
     cleanWhitespaces(
       str

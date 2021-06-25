@@ -44,7 +44,7 @@ describe('AlbumMetadata', () => {
       ),
       Future.map(html => {
         const document = DOMUtils.documentFromHtml(html)
-        const result = AlbumMetadata.fromDocument(Genre.wrap('Stoner'))(document)
+        const result = AlbumMetadata.fromAlbumDocument(Genre.wrap('Stoner'))(document)
 
         expect(Either.isRight(result)).toStrictEqual(true)
 
@@ -74,7 +74,7 @@ describe('AlbumMetadata', () => {
       ),
       Future.map(html => {
         const document = DOMUtils.documentFromHtml(html)
-        const result = AlbumMetadata.fromDocument(Genre.wrap('Stoner'))(document)
+        const result = AlbumMetadata.fromAlbumDocument(Genre.wrap('Stoner'))(document)
 
         expect(Either.isRight(result)).toStrictEqual(true)
 

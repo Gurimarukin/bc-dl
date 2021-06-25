@@ -14,7 +14,7 @@ import { WriteTagsAction } from '../models/WriteTagsAction'
 import { decodeError } from '../utils/decodeError'
 import { Either, Future, List, Maybe, NonEmptyArray, Tuple } from '../utils/fp'
 import { FsUtils } from '../utils/FsUtils'
-import { StringUtils, s } from '../utils/StringUtils'
+import { StringUtils } from '../utils/StringUtils'
 import { TagsUtils } from '../utils/TagsUtils'
 import {
   CmdArgs,
@@ -126,14 +126,14 @@ const getActions = (
     Either.mapLeft(errors =>
       Error(
         StringUtils.stripMargins(
-          s`Failed to find file matching tracks:
-           |${pipe(errors, StringUtils.mkString('\n'))}
-           |
-           |Considered files:
-           |${pipe(mp3Files, NonEmptyArray.map(FileWithTags.stringify), StringUtils.mkString('\n'))}
-           |
-           |Album metadata:
-           |${AlbumMetadata.stringify(metadata)}`,
+          `Failed to find file matching tracks:
+          |${pipe(errors, StringUtils.mkString('\n'))}
+          |
+          |Considered files:
+          |${pipe(mp3Files, NonEmptyArray.map(FileWithTags.stringify), StringUtils.mkString('\n'))}
+          |
+          |Album metadata:
+          |${AlbumMetadata.stringify(metadata)}`,
         ),
       ),
     ),
@@ -156,12 +156,12 @@ const getAction = (
       filesAndTags =>
         NonEmptyArray.of(
           StringUtils.stripMargins(
-            s`Found more that one file matching track: ${prettyTrackInfo(metadata)(track)}
-             |${pipe(
-               filesAndTags,
-               NonEmptyArray.map(t => s`- ${FileWithTags.stringify(t)}`),
-               StringUtils.mkString('\n'),
-             )}`,
+            `Found more that one file matching track: ${prettyTrackInfo(metadata)(track)}
+            |${pipe(
+              filesAndTags,
+              NonEmptyArray.map(t => `- ${FileWithTags.stringify(t)}`),
+              StringUtils.mkString('\n'),
+            )}`,
           ),
         ),
     ),
@@ -171,7 +171,7 @@ const getAction = (
   )
 
 const noMatchError = (metadata: AlbumMetadata, track: AlbumMetadata.Track): string =>
-  s`Couldn't find file matching track: ${prettyTrackInfo(metadata)(track)}`
+  `Couldn't find file matching track: ${prettyTrackInfo(metadata)(track)}`
 
 const trackMatchesTags = (metadata: AlbumMetadata, track: AlbumMetadata.Track) => ([
   ,
