@@ -5,6 +5,7 @@ import { flow, pipe } from 'fp-ts/function'
 import { ExecYoutubeDl, HttpGet, HttpGetBuffer } from '../../src/features/common'
 import { Dir, FileOrDir } from '../../src/models/FileOrDir'
 import { Url } from '../../src/models/Url'
+import { Console } from '../../src/utils/Console'
 import { Future } from '../../src/utils/fp'
 import { FsUtils } from '../../src/utils/FsUtils'
 
@@ -46,13 +47,15 @@ export const execYoutubeDlMocked: ExecYoutubeDl = url => {
   return Future.left(Error(`Unknown url: ${Url.unwrap(url)}`))
 }
 
-const copyMp3DirContent = (dir: string): Future<void> =>
-  pipe(
+const copyMp3DirContent = (dir: string): Future<void> => {
+  const mp3Dir = pipe(Dir.of(__dirname), Dir.joinDir('..', 'resources', 'mp3', dir))
+  return pipe(
     Future.Do,
-    Future.bind('mp3DirContent', () =>
-      FsUtils.readdir(pipe(Dir.of(__dirname), Dir.joinDir('..', 'resources', 'mp3', dir))),
-    ),
+    Future.bind('mp3DirContent', () => FsUtils.readdir(mp3Dir)),
     Future.bind('cwd', () => Future.fromIOEither(FsUtils.cwd())),
+    Future.chainFirst(({ cwd }) =>
+      Future.fromIOEither(Console.log(`Copying from "${mp3Dir.path}" to "${cwd.path}"`)),
+    ),
     Future.chain(({ mp3DirContent, cwd }) =>
       pipe(
         mp3DirContent,
@@ -66,6 +69,7 @@ const copyMp3DirContent = (dir: string): Future<void> =>
     ),
     Future.map(() => {}),
   )
+}
 
 export const httpGetBufferMocked: HttpGetBuffer = url => {
   if (url === Url.wrap('https://f4.bcbits.com/img/a3172027603_16.jpg')) {

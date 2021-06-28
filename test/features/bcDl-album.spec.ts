@@ -9,7 +9,12 @@ import { Url } from '../../src/models/Url'
 import { Future, List, Tuple } from '../../src/utils/fp'
 import { FsUtils } from '../../src/utils/FsUtils'
 import { TagsUtils } from '../../src/utils/TagsUtils'
-import { cleanMusicDir, execYoutubeDlMocked, httpGetBufferMocked, httpGetMocked } from './helpers'
+import {
+  cleanMusicDir,
+  execYoutubeDlMocked,
+  httpGetBufferMocked,
+  httpGetMocked,
+} from './testHelpers'
 
 const musicDir = pipe(Dir.of(__dirname), Dir.joinDir('..', 'music', 'album'))
 
