@@ -125,12 +125,27 @@ export const getActions = (
   albumDir: Dir,
   metadata: AlbumMetadata,
   cover: Buffer,
-): Future<NonEmptyArray<WriteTagsAction>> =>
-  pipe(
-    cleanFileNames(mp3Files, metadata),
-    NonEmptyArray.traverse(IO.ioEither)(getAction(albumDir, metadata, cover)),
+): Future<NonEmptyArray<WriteTagsAction>> => {
+  const fromDeletions = getActionsFromDeletions(mp3Files, albumDir, metadata, cover)
+  const cleanedArtist = StringUtils.cleanForCompare(metadata.artist)
+  const cleanedAlbum = pipe(metadata.album, Album.stringify, StringUtils.cleanForCompare)
+  return pipe(
+    fromDeletions([cleanedArtist, cleanedAlbum]),
+    IO.alt(() => fromDeletions([cleanedArtist])),
     Future.fromIOEither,
-    Future.chain(
+  )
+}
+
+const getActionsFromDeletions = (
+  mp3Files: NonEmptyArray<File>,
+  albumDir: Dir,
+  metadata: AlbumMetadata,
+  cover: Buffer,
+) => (unsortedDeletions: NonEmptyArray<string>): IO<NonEmptyArray<WriteTagsAction>> =>
+  pipe(
+    cleanFileNames(mp3Files)(unsortedDeletions),
+    NonEmptyArray.traverse(IO.ioEither)(getAction(albumDir, metadata, cover)),
+    IO.chain(
       flow(
         NonEmptyArray.sequence(Validation.applicativeValidation),
         Either.mapLeft(errors =>
@@ -148,7 +163,7 @@ export const getActions = (
             ),
           ),
         ),
-        Future.fromEither,
+        IO.fromEither,
       ),
     ),
   )
@@ -161,21 +176,14 @@ export const ordStringLength: Ord<string> = ord.fromCompare((x, y) => {
   return lengthComparison === 0 ? ord.ordString.compare(x, y) : lengthComparison
 })
 
-const cleanFileNames = (
-  mp3Files: NonEmptyArray<File>,
-  metadata: AlbumMetadata,
+const cleanFileNames = (mp3Files: NonEmptyArray<File>) => (
+  unsortedDeletions: NonEmptyArray<string>,
 ): NonEmptyArray<CleanedFile> => {
   const cleanedFiles = pipe(
     mp3Files,
     NonEmptyArray.map(f => Tuple.of(f, StringUtils.cleanForCompare(f.basename))),
   )
-  const deletions = pipe(
-    [
-      StringUtils.cleanForCompare(metadata.artist),
-      pipe(metadata.album, Album.stringify, StringUtils.cleanForCompare),
-    ],
-    List.sort(ordStringLength),
-  )
+  const deletions = pipe(unsortedDeletions, NonEmptyArray.sort(ordStringLength))
   return pipe(
     deletions,
     List.reduce(cleanedFiles, (files, toDelete) =>

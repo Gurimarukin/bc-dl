@@ -45,8 +45,7 @@ describe('getMetadata - album', () => {
     ))
 })
 
-// eslint-disable-next-line functional/no-expression-statement
-describe.only('e2e - album', () => {
+describe('e2e - album', () => {
   beforeEach(() => pipe(cleanMusicDir(musicDir), Future.runUnsafe))
   afterEach(() => pipe(cleanMusicDir(musicDir), Future.runUnsafe))
 

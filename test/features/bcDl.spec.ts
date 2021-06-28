@@ -312,6 +312,49 @@ describe('getActions', () => {
         ]),
       )
     }))
+
+  /**
+   * Snakes Of Russia - Shallow End Diving
+   * Every track contains album's name
+   */
+  const snakesOfRussiaShallowEndDiving: AlbumMetadata = {
+    artist: 'Snakes Of Russia',
+    album: { name: 'Shallow End Diving', type: 'LP' },
+    year: 2021,
+    genre: Genre.wrap('Electro'),
+    tracks: [
+      { number: 1, title: 'Shallow End Diving' },
+      { number: 2, title: 'Shallow End Diving - Sombre Lux Remix' },
+    ],
+    coverUrl: Url.wrap('https://f4.bcbits.com/img/a2985982985_16.jpg'),
+  }
+
+  it('should Snakes Of Russia - Shallow End Diving', () =>
+    testGetActions(snakesOfRussiaShallowEndDiving, [
+      File.fromPath('Snakes Of Russia - Shallow End Diving.mp3'),
+      File.fromPath('Snakes Of Russia - Shallow End Diving - Sombre Lux Remix.mp3'),
+    ])(result => {
+      expect(result).toStrictEqual(
+        Either.right<Error, NonEmptyArray<WriteTagsAction>>([
+          {
+            file: File.fromPath('Snakes Of Russia - Shallow End Diving.mp3'),
+            newTags: getTags(snakesOfRussiaShallowEndDiving, imageBuffer, {
+              number: 1,
+              title: 'Shallow End Diving',
+            }),
+            renameTo: File.fromPath('01 - Shallow End Diving.mp3'),
+          },
+          {
+            file: File.fromPath('Snakes Of Russia - Shallow End Diving - Sombre Lux Remix.mp3'),
+            newTags: getTags(snakesOfRussiaShallowEndDiving, imageBuffer, {
+              number: 2,
+              title: 'Shallow End Diving - Sombre Lux Remix',
+            }),
+            renameTo: File.fromPath('02 - Shallow End Diving - Sombre Lux Remix.mp3'),
+          },
+        ]),
+      )
+    }))
 })
 
 describe('ordStringLength', () => {
