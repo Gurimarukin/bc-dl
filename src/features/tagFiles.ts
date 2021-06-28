@@ -62,19 +62,19 @@ const ensureAlbum = (httpGet: HttpGet, httpGetBuffer: HttpGetBuffer) => (
   pipe(
     Future.Do,
 
-    Future.do(() => Future.fromIOEither(logger.logWithUrl(url, 'Fetching metadata'))),
+    Future.chainFirst(() => Future.fromIOEither(logger.logWithUrl(url, 'Fetching metadata'))),
     Future.bind('metadata', () => getMetadata(httpGet)(genre, url)),
 
-    Future.do(() => Future.fromIOEither(logger.logWithUrl(url, 'Downloading cover'))),
+    Future.chainFirst(() => Future.fromIOEither(logger.logWithUrl(url, 'Downloading cover'))),
     Future.bind('cover', ({ metadata }) => downloadCover(httpGetBuffer)(metadata.coverUrl)),
 
-    Future.do(() => Future.fromIOEither(logger.logWithUrl(url, 'Ensuring files'))),
+    Future.chainFirst(() => Future.fromIOEither(logger.logWithUrl(url, 'Ensuring files'))),
     Future.bind('albumDir', ({ metadata }) => Future.right(getAlbumDir(musicLibraryDir, metadata))),
     Future.bind('mp3Files', () => getMp3Files(musicLibraryDir)),
     Future.bind('actions', ({ metadata, cover, albumDir, mp3Files }) =>
       getActions(mp3Files, albumDir, metadata, cover),
     ),
-    Future.do(({ albumDir }) => ensureAlbumDir(albumDir)),
+    Future.chainFirst(({ albumDir }) => ensureAlbumDir(albumDir)),
     rmrfAlbumDirOnError(url)(({ actions }) => writeAllTags(actions)),
   )
 

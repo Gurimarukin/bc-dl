@@ -11,8 +11,6 @@ import {
   taskEither,
 } from 'fp-ts'
 import { Lazy, flow, pipe } from 'fp-ts/function'
-import { Kind, Kind2, URIS, URIS2 } from 'fp-ts/HKT'
-import { Monad1, Monad2 } from 'fp-ts/Monad'
 import * as C from 'io-ts/Codec'
 import * as D from 'io-ts/Decoder'
 import { Encoder } from 'io-ts/Encoder'
@@ -33,13 +31,11 @@ export const Dict = readonlyRecord
 export type Either<E, A> = either.Either<E, A>
 export const Either = {
   ...either,
-  do: getDo2(either.either),
 }
 
 export type Maybe<A> = option.Option<A>
 export const Maybe = {
   ...option,
-  do: getDo1(option.option),
 }
 
 export type NonEmptyArray<A> = readonlyNonEmptyArray.ReadonlyNonEmptyArray<A>
@@ -52,7 +48,6 @@ export const NonEmptyArray = {
   ...readonlyNonEmptyArray,
   stringify: <A>(str: (a: A) => string): ((nea: NonEmptyArray<A>) => string) =>
     flow(readonlyNonEmptyArray.map(str), mkString_('NonEmptyArray(', ', ', ')')),
-  do: getDo1(readonlyNonEmptyArray.readonlyNonEmptyArray),
   decoder: neaDecoder,
   encoder: neaEncoder,
   codec: <O, A>(
@@ -68,7 +63,6 @@ export const List = {
   isEmpty: <A>(l: List<A>): l is readonly [] => readonlyArray.isEmpty(l),
   hasLength1: <A>(l: List<A>): l is NonEmptyArray<A> => l.length === 1,
   concat: <A>(a: List<A>, b: List<A>): List<A> => [...a, ...b],
-  do: getDo1(readonlyArray.readonlyArray),
 }
 
 export type Tuple<A, B> = readonly [A, B]
@@ -93,7 +87,6 @@ export const Try = {
         throw e
       }),
     ),
-  do: getDo2(either.either),
 }
 
 const futureRight = <A>(a: A): Future<A> => taskEither.right(a)
@@ -109,7 +102,6 @@ export const Future = {
   runUnsafe: <A>(fa: Future<A>): Promise<A> => pipe(fa, task.map(Try.get))(),
   // delay: <A>(ms: MsDuration) => (future: Future<A>): Future<A> =>
   //   pipe(future, task.delay(MsDuration.unwrap(ms))),
-  do: getDo2(taskEither.taskEither),
 }
 
 const ioTryCatch = <A>(a: Lazy<A>): IO<A> => ioEither.tryCatch(a, unknownAsError)
@@ -124,17 +116,6 @@ export const IO = {
       Future.runUnsafe(f)
     }),
   runUnsafe: <A>(ioA: IO<A>): A => Try.get(ioA()),
-  do: getDo2(ioEither.ioEither),
-}
-
-function getDo1<F extends URIS>(m: Monad1<F>) {
-  return <A>(f: (a: A) => Kind<F, void>) => (fa: Kind<F, A>): Kind<F, A> =>
-    m.chain(fa, a => m.map(f(a), () => a))
-}
-
-function getDo2<F extends URIS2>(m: Monad2<F>) {
-  return <E, A>(f: (a: A) => Kind2<F, E, void>) => (fa: Kind2<F, E, A>): Kind2<F, E, A> =>
-    m.chain(fa, a => m.map(f(a), () => a))
 }
 
 /**
