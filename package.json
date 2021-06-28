@@ -19,9 +19,10 @@
     "lint": "eslint --cache --max-warnings 0 --ext .ts src test",
     "lint-fix": "eslint --fix --cache --max-warnings 0 --ext .ts src test",
     "jest": "jest",
+    "jest-unit": "jest --testPathPattern=.*\\.spec\\.ts",
     "jest-coverage": "jest --ci --coverage",
     "style": "yarn run prettier && yarn run import-sort && yarn run lint",
-    "test": "yarn run style && yarn run jest"
+    "test": "yarn run style && yarn run jest-unit"
   },
   "devDependencies": {
     "@type-config/strict": "^1.1.1",
