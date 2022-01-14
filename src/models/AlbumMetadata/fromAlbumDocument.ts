@@ -1,15 +1,15 @@
 import { apply } from 'fp-ts'
 import { pipe } from 'fp-ts/function'
 import * as D from 'io-ts/Decoder'
-import { DomHandler } from '../../utils/DomHandler'
 
+import { DomHandler } from '../../utils/DomHandler'
 import { Either, NonEmptyArray } from '../../utils/fp'
 import { numberFromString } from '../../utils/ioTsTypes'
 import { Genre } from '../Genre'
 import { Validation } from '../Validation'
 import { AlbumMetadata } from './AlbumMetadata'
-import { lift, parseAlbum, parseCoverUrl, parseYear } from './helpers'
 import { Track } from './Track'
+import { lift, parseAlbum, parseCoverUrl, parseYear } from './helpers'
 
 export const fromAlbumDocument = (genre: Genre) => (
   domHandler: DomHandler,

@@ -1,12 +1,11 @@
 import childProcess from 'child_process'
-
 import { pipe } from 'fp-ts/function'
 
 import { ExecYoutubeDl } from '../features/common'
 import { Url } from '../models/Url'
 import { Console } from './Console'
-import { Either, Future, IO, List, Maybe } from './fp'
 import { StringUtils } from './StringUtils'
+import { Either, Future, IO, List, Maybe } from './fp'
 
 type ExecFailure = {
   readonly cmd: string

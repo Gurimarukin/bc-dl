@@ -3,9 +3,9 @@ import { flow, pipe } from 'fp-ts/function'
 
 import { bcDl } from '../../src/features/bcDl'
 import { Dir, File, FileOrDir } from '../../src/models/FileOrDir'
-import { Future, List, Tuple } from '../../src/utils/fp'
 import { FsUtils } from '../../src/utils/FsUtils'
 import { TagsUtils } from '../../src/utils/TagsUtils'
+import { Future, List, Tuple } from '../../src/utils/fp'
 import {
   cleanMusicDir,
   execYoutubeDlMocked,

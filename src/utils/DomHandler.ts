@@ -2,10 +2,10 @@ import { apply, predicate } from 'fp-ts'
 import { flow, pipe } from 'fp-ts/function'
 import { JSDOM } from 'jsdom'
 
+import { TElement } from '../models/TElement'
 import { Validation } from '../models/Validation'
 import { StringUtils } from '../utils/StringUtils'
 import { Either, NonEmptyArray } from '../utils/fp'
-import { TElement } from '../models/TElement'
 
 export type DomHandler = ReturnType<typeof domHandlerOf>
 

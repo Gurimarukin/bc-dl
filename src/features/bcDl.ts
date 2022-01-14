@@ -1,6 +1,6 @@
 import { ord } from 'fp-ts'
-import { flow, pipe } from 'fp-ts/function'
 import { Ord } from 'fp-ts/Ord'
+import { flow, pipe } from 'fp-ts/function'
 import * as D from 'io-ts/Decoder'
 
 import { Album } from '../models/Album'
@@ -11,11 +11,11 @@ import { Url } from '../models/Url'
 import { Validation } from '../models/Validation'
 import { WriteTagsAction } from '../models/WriteTagsAction'
 import { Console } from '../utils/Console'
+import { FsUtils } from '../utils/FsUtils'
+import { StringUtils } from '../utils/StringUtils'
 import { decodeError } from '../utils/decodeError'
 import { Either, Future, IO, List, NonEmptyArray, Tuple } from '../utils/fp'
-import { FsUtils } from '../utils/FsUtils'
 import { listFoldLength } from '../utils/listFoldLength'
-import { StringUtils } from '../utils/StringUtils'
 import {
   CmdArgs,
   ExecYoutubeDl,

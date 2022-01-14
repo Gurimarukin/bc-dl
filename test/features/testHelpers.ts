@@ -6,8 +6,8 @@ import { flow, pipe } from 'fp-ts/function'
 import { ExecYoutubeDl, HttpGet, HttpGetBuffer } from '../../src/features/common'
 import { Dir, FileOrDir } from '../../src/models/FileOrDir'
 import { Url } from '../../src/models/Url'
-import { Future } from '../../src/utils/fp'
 import { FsUtils } from '../../src/utils/FsUtils'
+import { Future } from '../../src/utils/fp'
 
 export const cleanMusicDir = (musicDir: Dir): Future<void> =>
   pipe(

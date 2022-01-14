@@ -11,11 +11,11 @@ import { Genre } from '../models/Genre'
 import { Url } from '../models/Url'
 import { Validation } from '../models/Validation'
 import { WriteTagsAction } from '../models/WriteTagsAction'
-import { decodeError } from '../utils/decodeError'
-import { Either, Future, List, Maybe, NonEmptyArray, Tuple } from '../utils/fp'
 import { FsUtils } from '../utils/FsUtils'
 import { StringUtils } from '../utils/StringUtils'
 import { TagsUtils } from '../utils/TagsUtils'
+import { decodeError } from '../utils/decodeError'
+import { Either, Future, List, Maybe, NonEmptyArray, Tuple } from '../utils/fp'
 import {
   CmdArgs,
   HttpGet,

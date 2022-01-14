@@ -1,10 +1,9 @@
-import util from 'util'
-
 import { AxiosResponse } from 'axios'
 import { Command, Opts, codecToDecode } from 'decline-ts'
 import { apply } from 'fp-ts'
 import { flow, identity, not, pipe } from 'fp-ts/function'
 import NodeID3 from 'node-id3'
+import util from 'util'
 
 import { config } from '../config'
 import { Album } from '../models/Album'
@@ -14,11 +13,11 @@ import { Genre } from '../models/Genre'
 import { Url } from '../models/Url'
 import { WriteTagsAction } from '../models/WriteTagsAction'
 import { Console } from '../utils/Console'
-import { Either, Future, IO, List, Maybe, NonEmptyArray } from '../utils/fp'
+import { DomHandler } from '../utils/DomHandler'
 import { FsUtils } from '../utils/FsUtils'
 import { StringUtils } from '../utils/StringUtils'
 import { TagsUtils } from '../utils/TagsUtils'
-import { DomHandler } from '../utils/DomHandler'
+import { Either, Future, IO, List, Maybe, NonEmptyArray } from '../utils/fp'
 
 export type HttpGet = (url: Url) => Future<AxiosResponse<string>>
 export type HttpGetBuffer = (url: Url) => Future<AxiosResponse<Buffer>>

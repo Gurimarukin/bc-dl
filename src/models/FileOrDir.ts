@@ -1,7 +1,6 @@
+import { pipe } from 'fp-ts/function'
 import fs from 'fs'
 import nodePath from 'path'
-
-import { pipe } from 'fp-ts/function'
 
 import { IO, List } from '../utils/fp'
 

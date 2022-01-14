@@ -1,6 +1,5 @@
-import fs from 'fs'
-
 import { pipe } from 'fp-ts/function'
+import fs from 'fs'
 import rimraf from 'rimraf'
 
 import { Dir, File, FileOrDir } from '../models/FileOrDir'

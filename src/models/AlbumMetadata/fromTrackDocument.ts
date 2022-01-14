@@ -1,7 +1,7 @@
 import { apply } from 'fp-ts'
 import { pipe } from 'fp-ts/function'
-import { DomHandler } from '../../utils/DomHandler'
 
+import { DomHandler } from '../../utils/DomHandler'
 import { Either, NonEmptyArray } from '../../utils/fp'
 import { Genre } from '../Genre'
 import { Validation } from '../Validation'

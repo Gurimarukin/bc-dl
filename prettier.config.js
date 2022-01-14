@@ -5,4 +5,13 @@ module.exports = {
   singleQuote: true,
   trailingComma: 'all',
   arrowParens: 'avoid',
+  importOrder: [
+    '<THIRD_PARTY_MODULES>',
+    '^(\\.?\\.\\/)+(src/)?shared/(.*)$',
+    '^(\\.?\\.\\/)+(src/)?client/(.*)$',
+    '^(\\.?\\.\\/)+(src/)?server/(.*)$',
+    '^[./]',
+  ],
+  importOrderSeparation: true,
+  importOrderSortSpecifiers: true,
 }

@@ -9,9 +9,9 @@ import { Dir } from '../../src/models/FileOrDir'
 import { Genre } from '../../src/models/Genre'
 import { Url } from '../../src/models/Url'
 import { DomHandler } from '../../src/utils/DomHandler'
-import { Either, Future } from '../../src/utils/fp'
 import { FsUtils } from '../../src/utils/FsUtils'
 import { StringUtils } from '../../src/utils/StringUtils'
+import { Either, Future } from '../../src/utils/fp'
 
 describe('EP regex', () => {
   it('should parse EP', () => {

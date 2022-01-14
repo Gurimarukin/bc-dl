@@ -5,9 +5,9 @@ import { Album } from '../Album'
 import { Genre } from '../Genre'
 import { Url } from '../Url'
 import { AlbumMetadata as AlbumMetadata_ } from './AlbumMetadata'
+import { Track as Track_ } from './Track'
 import { fromAlbumDocument as fromAlbumDocument_ } from './fromAlbumDocument'
 import { fromTrackDocument as fromTrackDocument_ } from './fromTrackDocument'
-import { Track as Track_ } from './Track'
 
 export type AlbumMetadata = AlbumMetadata_
 
