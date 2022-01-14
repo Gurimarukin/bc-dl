@@ -1,3 +1,4 @@
+/* eslint-disable functional/no-return-void */
 import { pipe } from 'fp-ts/function'
 
 import { getMetadata } from '../../src/features/common'

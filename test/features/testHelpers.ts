@@ -1,3 +1,4 @@
+/* eslint-disable functional/no-return-void */
 import { AxiosResponse } from 'axios'
 import { List } from 'decline-ts/lib/utils/fp'
 import { flow, pipe } from 'fp-ts/function'
@@ -50,8 +51,8 @@ const copyMp3DirContent = (dir: string): Future<void> => {
   const mp3Dir = pipe(Dir.of(__dirname), Dir.joinDir('..', 'resources', 'mp3', dir))
   return pipe(
     Future.Do,
-    Future.bind('mp3DirContent', () => FsUtils.readdir(mp3Dir)),
-    Future.bind('cwd', () => Future.fromIOEither(FsUtils.cwd())),
+    Future.apS('mp3DirContent', FsUtils.readdir(mp3Dir)),
+    Future.apS('cwd', Future.fromIOEither(FsUtils.cwd())),
     Future.chain(({ mp3DirContent, cwd }) =>
       pipe(
         mp3DirContent,

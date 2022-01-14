@@ -1,7 +1,7 @@
 import { flow, pipe } from 'fp-ts/function'
 
 import { config } from '../../config'
-import { DOMUtils } from '../../utils/DOMUtils'
+import { DomHandler } from '../../utils/DomHandler'
 import { Either, Maybe, NonEmptyArray } from '../../utils/fp'
 import { numberFromString } from '../../utils/ioTsTypes'
 import { StringUtils } from '../../utils/StringUtils'
@@ -15,18 +15,18 @@ export const lift = (name: string) => <A>(e: Either<string, A>): Validation<A> =
     Either.mapLeft(err => NonEmptyArray.of(`Failed to decode ${name}: ${err}`)),
   )
 
-export const parseAlbum = ({ isTrack }: IsTrack) => (
-  document: DOMUtils.Document,
-): Validation<Album> =>
+export const parseAlbum = ({ isTrack }: IsTrack) => (domHandler: DomHandler): Validation<Album> =>
   pipe(
-    DOMUtils.parseText(document, '#name-section > h2.trackTitle'),
+    domHandler.document,
+    domHandler.querySelectorTextContent('#name-section > h2.trackTitle'),
     lift('album'),
     Either.map(Album.fromRaw({ isTrack })),
   )
 
-export const parseYear = (document: DOMUtils.Document): Validation<number> =>
+export const parseYear = (domHandler: DomHandler): Validation<number> =>
   pipe(
-    DOMUtils.parseText(document, '#trackInfoInner .tralbumData.tralbum-credits'),
+    domHandler.document,
+    domHandler.querySelectorTextContent('#trackInfoInner .tralbumData.tralbum-credits'),
     Either.chain(str =>
       pipe(
         str,
@@ -38,10 +38,10 @@ export const parseYear = (document: DOMUtils.Document): Validation<number> =>
     lift('year'),
   )
 
-export const parseCoverUrl = (document: DOMUtils.Document): Validation<Url> =>
+export const parseCoverUrl = (domHandler: DomHandler): Validation<Url> =>
   pipe(
-    document,
-    DOMUtils.querySelectorEnsureOne('#tralbumArt img', DOMUtils.HTMLImageElement),
+    domHandler.document,
+    DomHandler.querySelectorEnsureOne('#tralbumArt img', domHandler.HTMLImageElement),
     Either.map(e => e.src),
     Either.filterOrElse(isJpg, src => `Expected cover to be a jpg: ${src}`),
     Either.map(Url.wrap),

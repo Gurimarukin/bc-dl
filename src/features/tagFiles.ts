@@ -52,7 +52,7 @@ export const tagFiles = (
         Future.sequenceSeqArray,
       ),
     ),
-    Future.map(() => {}),
+    Future.map(() => undefined),
   )
 
 const ensureAlbum = (httpGet: HttpGet, httpGetBuffer: HttpGetBuffer) => (
@@ -120,9 +120,7 @@ const getActions = (
 ): Future<NonEmptyArray<WriteTagsAction>> =>
   pipe(
     metadata.tracks,
-    NonEmptyArray.traverse(Validation.applicativeValidation)(
-      getAction(albumDir, metadata, cover, mp3Files),
-    ),
+    NonEmptyArray.traverse(Validation.validation)(getAction(albumDir, metadata, cover, mp3Files)),
     Either.mapLeft(errors =>
       Error(
         StringUtils.stripMargins(

@@ -1,3 +1,4 @@
+/* eslint-disable functional/no-return-void */
 import { flow, pipe } from 'fp-ts/function'
 
 import { getActions, ordStringLength } from '../../src/features/bcDl'
@@ -13,7 +14,6 @@ const imageBuffer = Buffer.from('Image Buffer', 'utf-8')
 
 describe('getActions', () => {
   const testGetActions = (metadata: AlbumMetadata, mp3Files: NonEmptyArray<File>) => (
-    // eslint-disable-next-line functional/no-return-void
     f: (result: Either<Error, NonEmptyArray<WriteTagsAction>>) => void,
   ): Promise<void> =>
     pipe(

@@ -53,7 +53,7 @@ export const bcDl = (
         Future.sequenceSeqArray,
       ),
     ),
-    Future.map(() => {}),
+    Future.map(() => undefined),
   )
 
 const downloadAlbum = (
@@ -98,7 +98,7 @@ const getDownloadedMp3Files = (albumDir: Dir): Future<NonEmptyArray<File>> =>
     FsUtils.readdir(albumDir),
     Future.chain(
       flow(
-        List.traverse(Validation.applicativeValidation)(getMp3File),
+        List.traverse(Validation.validation)(getMp3File),
         Either.mapLeft(e =>
           Error(`Errors while listing mp3 files:\n${pipe(e, StringUtils.mkString('\n'))}`),
         ),
@@ -147,7 +147,7 @@ const getActionsFromDeletions = (
     NonEmptyArray.traverse(IO.ioEither)(getAction(albumDir, metadata, cover)),
     IO.chain(
       flow(
-        NonEmptyArray.sequence(Validation.applicativeValidation),
+        NonEmptyArray.sequence(Validation.validation),
         Either.mapLeft(errors =>
           Error(
             StringUtils.stripMargins(

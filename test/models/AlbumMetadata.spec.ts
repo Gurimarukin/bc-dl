@@ -1,3 +1,4 @@
+/* eslint-disable functional/no-return-void */
 import { Right } from 'fp-ts/Either'
 import { pipe } from 'fp-ts/function'
 
@@ -7,7 +8,7 @@ import { AlbumMetadata } from '../../src/models/AlbumMetadata'
 import { Dir } from '../../src/models/FileOrDir'
 import { Genre } from '../../src/models/Genre'
 import { Url } from '../../src/models/Url'
-import { DOMUtils } from '../../src/utils/DOMUtils'
+import { DomHandler } from '../../src/utils/DomHandler'
 import { Either, Future } from '../../src/utils/fp'
 import { FsUtils } from '../../src/utils/FsUtils'
 import { StringUtils } from '../../src/utils/StringUtils'
@@ -43,8 +44,8 @@ describe('AlbumMetadata', () => {
         pipe(Dir.of(__dirname), Dir.joinFile('..', 'resources', 'deep-in-the-woods-ep.html')),
       ),
       Future.map(html => {
-        const document = DOMUtils.documentFromHtml(html)
-        const result = AlbumMetadata.fromAlbumDocument(Genre.wrap('Stoner'))(document)
+        const domHandler = DomHandler.of(html)
+        const result = AlbumMetadata.fromAlbumDocument(Genre.wrap('Stoner'))(domHandler)
 
         expect(Either.isRight(result)).toStrictEqual(true)
 
@@ -72,8 +73,8 @@ describe('AlbumMetadata', () => {
         pipe(Dir.of(__dirname), Dir.joinFile('..', 'resources', 'talking-to-the-moon.html')),
       ),
       Future.map(html => {
-        const document = DOMUtils.documentFromHtml(html)
-        const result = AlbumMetadata.fromAlbumDocument(Genre.wrap('Stoner'))(document)
+        const domHandler = DomHandler.of(html)
+        const result = AlbumMetadata.fromAlbumDocument(Genre.wrap('Stoner'))(domHandler)
 
         expect(Either.isRight(result)).toStrictEqual(true)
 

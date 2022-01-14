@@ -15,6 +15,6 @@ export namespace TagsUtils {
     pipe(
       Future.tryCatch(() => NodeID3.Promise.write(tags, file.path)),
       // Future.filterOrElse(identity, res => Error(s`${res} status when writing tags: ${path}`)),
-      Future.map(() => {}),
+      Future.map(() => undefined),
     )
 }

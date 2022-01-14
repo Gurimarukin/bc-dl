@@ -9,8 +9,7 @@ module.exports = {
     'plugin:@typescript-eslint/recommended',
     'plugin:functional/recommended',
     'plugin:fp-ts/all',
-    'prettier/@typescript-eslint',
-    'plugin:prettier/recommended',
+    'prettier',
   ],
   reportUnusedDisableDirectives: true,
   rules: {
@@ -27,6 +26,7 @@ module.exports = {
     '@typescript-eslint/no-base-to-string': ['error', { ignoredTypeNames: ['Error'] }],
     '@typescript-eslint/no-empty-function': 'off',
     '@typescript-eslint/no-explicit-any': 'error',
+    '@typescript-eslint/no-unnecessary-boolean-literal-compare': 'warn',
     '@typescript-eslint/no-unnecessary-condition': 'warn',
     '@typescript-eslint/no-unused-vars': 'warn',
     '@typescript-eslint/no-use-before-define': 'off',

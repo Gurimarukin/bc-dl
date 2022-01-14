@@ -14,11 +14,11 @@ import { Genre } from '../models/Genre'
 import { Url } from '../models/Url'
 import { WriteTagsAction } from '../models/WriteTagsAction'
 import { Console } from '../utils/Console'
-import { DOMUtils } from '../utils/DOMUtils'
 import { Either, Future, IO, List, Maybe, NonEmptyArray } from '../utils/fp'
 import { FsUtils } from '../utils/FsUtils'
 import { StringUtils } from '../utils/StringUtils'
 import { TagsUtils } from '../utils/TagsUtils'
+import { DomHandler } from '../utils/DomHandler'
 
 export type HttpGet = (url: Url) => Future<AxiosResponse<string>>
 export type HttpGetBuffer = (url: Url) => Future<AxiosResponse<Buffer>>
@@ -96,12 +96,12 @@ const getGenres = (): Future<NonEmptyArray<Genre>> =>
 export const getMetadata = (httpGet: HttpGet) => (genre: Genre, url: Url): Future<AlbumMetadata> =>
   pipe(
     Future.Do,
-    Future.bind('fromDocument', () => getFromDocument(url)),
-    Future.bind('response', () => httpGet(url)),
-    Future.chain(({ fromDocument, response: { data } }) =>
+    Future.apS('fromDomHandler', getFromDomHandler(url)),
+    Future.apS('response', httpGet(url)),
+    Future.chain(({ fromDomHandler, response: { data: html } }) =>
       pipe(
-        DOMUtils.documentFromHtml(data),
-        fromDocument(genre),
+        DomHandler.of(html),
+        fromDomHandler(genre),
         Either.mapLeft(e =>
           Error(`Errors while parsing AlbumMetadata:\n${pipe(e, StringUtils.mkString('\n'))}`),
         ),
@@ -110,10 +110,10 @@ export const getMetadata = (httpGet: HttpGet) => (genre: Genre, url: Url): Futur
     ),
   )
 
-const getFromDocument = (
+const getFromDomHandler = (
   url: Url,
 ): Future<
-  (genre: Genre) => (document: DOMUtils.Document) => Either<NonEmptyArray<string>, AlbumMetadata>
+  (genre: Genre) => (domHandler: DomHandler) => Either<NonEmptyArray<string>, AlbumMetadata>
 > => {
   if (isAlbum(url)) return Future.right(AlbumMetadata.fromAlbumDocument)
   if (isTrack(url)) return Future.right(AlbumMetadata.fromTrackDocument)
@@ -222,7 +222,7 @@ export const writeAllTags = (actions: NonEmptyArray<WriteTagsAction>): Future<vo
     actions,
     NonEmptyArray.map(writeTagsAndMoveFile),
     Future.sequenceArray,
-    Future.map(() => {}),
+    Future.map(() => undefined),
   )
 
 const writeTagsAndMoveFile = ({ file, newTags, renameTo }: WriteTagsAction): Future<void> =>

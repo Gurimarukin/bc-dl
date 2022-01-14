@@ -1,3 +1,4 @@
+/* eslint-disable functional/no-return-void */
 import { flow, pipe } from 'fp-ts/function'
 
 import { bcDl } from '../../src/features/bcDl'

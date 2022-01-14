@@ -1,3 +1,4 @@
+/* eslint-disable functional/no-return-void */
 import { StringUtils } from '../../src/utils/StringUtils'
 
 describe('StringUtils.cleanFileName', () => {

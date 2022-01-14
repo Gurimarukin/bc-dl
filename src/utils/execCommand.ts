@@ -23,8 +23,8 @@ export const execCommand = (
 ): Future<Result> =>
   Future.tryCatch(
     () =>
+      /* eslint-disable functional/no-let, functional/no-expression-statement, functional/no-return-void */
       new Promise<Result>((resolve, reject) => {
-        /* eslint-disable functional/no-let, functional/no-expression-statement */
         let stdout = ''
         const stderr = ''
         const child = childProcess.spawn(command, args)
@@ -45,8 +45,8 @@ export const execCommand = (
                 }),
           ),
         )
-        /* eslint-enable functional/no-let, functional/no-expression-statement */
       }),
+    /* eslint-enable functional/no-let, functional/no-expression-statement, functional/no-return-void */
   )
 
 const newLines = /\n*$/

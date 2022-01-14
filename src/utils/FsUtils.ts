@@ -14,6 +14,7 @@ export namespace FsUtils {
       Future.recover(() => Future.right<Maybe<fs.Stats>>(Maybe.none)),
     )
 
+  // eslint-disable-next-line functional/no-return-void
   export const chdir = (dir: Dir): IO<void> => IO.tryCatch(() => process.chdir(dir.path))
 
   export const copyFile = (src: FileOrDir, dest: FileOrDir, flags?: number): Future<void> =>
@@ -30,7 +31,7 @@ export namespace FsUtils {
   export const mkdir = (dir: Dir, options?: fs.MakeDirectoryOptions): Future<void> =>
     pipe(
       Future.tryCatch(() => fs.promises.mkdir(dir.path, options)),
-      Future.map(() => {}),
+      Future.map(() => undefined),
     )
 
   export const readdir = (dir: Dir): Future<List<FileOrDir>> =>
@@ -51,11 +52,13 @@ export namespace FsUtils {
   export const rmrf = (f: FileOrDir, options: rimraf.Options = {}): Future<void> =>
     Future.tryCatch(
       () =>
+        /* eslint-disable functional/no-return-void */
         new Promise<void>((resolve, reject) =>
           rimraf(f.path, options, (error: Error | null) =>
             error === null ? resolve() : reject(error),
           ),
         ),
+      /* eslint-enable functional/no-return-void */
     )
 
   export const rmdir = (dir: Dir, options?: fs.RmDirOptions): Future<void> =>
