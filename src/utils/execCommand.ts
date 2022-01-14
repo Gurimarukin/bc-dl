@@ -52,7 +52,7 @@ const newLines = /\n*$/
 export const execYoutubeDl: ExecYoutubeDl = url =>
   pipe(
     execCommand(
-      'youtube-dl',
+      'yt-dlp',
       [
         '--no-progress',
         '--extract-audio',
