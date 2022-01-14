@@ -5,11 +5,7 @@ import { JSDOM } from 'jsdom'
 import { Validation } from '../models/Validation'
 import { StringUtils } from '../utils/StringUtils'
 import { Either, NonEmptyArray } from '../utils/fp'
-
-export type Constructor<E> = {
-  new (): E
-  readonly prototype: E
-}
+import { TElement } from '../models/TElement'
 
 export type DomHandler = ReturnType<typeof domHandlerOf>
 
@@ -17,32 +13,33 @@ export type DomHandler = ReturnType<typeof domHandlerOf>
 const domHandlerOf = (html: string) => {
   const jsdom = new JSDOM(html)
 
+  const HTMLElement = TElement.wrap(jsdom.window.HTMLElement)
+  const HTMLAnchorElement = TElement.wrap(jsdom.window.HTMLAnchorElement)
+  const HTMLImageElement = TElement.wrap(jsdom.window.HTMLImageElement)
+  const HTMLParagraphElement = TElement.wrap(jsdom.window.HTMLParagraphElement)
+
   const querySelectorTextContent = (selector: string) => (
     parent: ParentNode,
   ): Either<string, string> =>
-    pipe(
-      parent,
-      querySelectorEnsureOne(selector, jsdom.window.HTMLElement),
-      Either.chain(textContent(selector)),
-    )
+    pipe(parent, querySelectorEnsureOne(selector, HTMLElement), Either.chain(textContent(selector)))
 
   return {
     document: jsdom.window.document,
     querySelectorTextContent,
 
-    HTMLAnchorElement: jsdom.window.HTMLAnchorElement,
-    HTMLElement: jsdom.window.HTMLElement,
-    HTMLImageElement: jsdom.window.HTMLImageElement,
-    HTMLParagraphElement: jsdom.window.HTMLParagraphElement,
+    HTMLAnchorElement,
+    HTMLElement,
+    HTMLImageElement,
+    HTMLParagraphElement,
   }
 }
 
 function querySelectorEnsureOne(selector: string): (parent: ParentNode) => Either<string, Element>
 function querySelectorEnsureOne<E extends Element>(
   selector: string,
-  type: Constructor<E>,
+  type: TElement<E>,
 ): (parent: ParentNode) => Either<string, E>
-function querySelectorEnsureOne<E extends Element>(selector: string, type?: Constructor<E>) {
+function querySelectorEnsureOne<E extends Element>(selector: string, type?: TElement<E>) {
   return (parent: ParentNode): Either<string, Element | E> => {
     const res = parent.querySelectorAll(selector)
     const elt = res[0]
@@ -52,10 +49,10 @@ function querySelectorEnsureOne<E extends Element>(selector: string, type?: Cons
 
     if (type === undefined) return Either.right(elt)
 
-    const isE = (e: Element): e is E => e instanceof type
+    const isE = (e: Element): e is E => e instanceof TElement.unwrap(type)
     if (isE(elt)) return Either.right(elt)
 
-    return Either.left(`Element don't have expected type: ${type.name}`)
+    return Either.left(`Element don't have expected type: ${TElement.name(type)}`)
   }
 }
 
@@ -64,11 +61,11 @@ function querySelectorAllNonEmpty(
 ): (parent: ParentNode) => Validation<NonEmptyArray<Element>>
 function querySelectorAllNonEmpty<E extends Element>(
   selector: string,
-  type: Constructor<E>,
+  type: TElement<E>,
 ): (parent: ParentNode) => Validation<NonEmptyArray<E>>
 function querySelectorAllNonEmpty<E extends Element>(
   selector: string,
-  type?: Constructor<E>,
+  type?: TElement<E>,
 ): (parent: ParentNode) => Validation<NonEmptyArray<E>> {
   return (parent: ParentNode): Validation<NonEmptyArray<E>> => {
     const elts = parent.querySelectorAll(selector)
@@ -80,7 +77,7 @@ function querySelectorAllNonEmpty<E extends Element>(
 
     if (type === undefined) return res as Validation<NonEmptyArray<E>>
 
-    const isE = (e: Element): e is E => e instanceof type
+    const isE = (e: Element): e is E => e instanceof TElement.unwrap(type)
     return pipe(
       res,
       Either.map(
@@ -90,9 +87,9 @@ function querySelectorAllNonEmpty<E extends Element>(
               ? Either.right(e)
               : Either.left(
                   NonEmptyArray.of(
-                    `Element ${i} matching "${selector}" - expected ${
-                      type.name
-                    } got <${e.nodeName.toLowerCase()} />`,
+                    `Element ${i} matching "${selector}" - expected ${TElement.name(
+                      type,
+                    )} got <${e.nodeName.toLowerCase()} />`,
                   ),
                 ),
         ),
