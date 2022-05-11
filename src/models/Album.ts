@@ -2,6 +2,7 @@ import { pipe } from 'fp-ts/function'
 
 import { config } from '../config'
 import { StringUtils } from '../utils/StringUtils'
+import { List, Maybe } from '../utils/fp'
 
 export type IsTrack = {
   readonly isTrack: boolean
@@ -22,17 +23,20 @@ export namespace Album {
         type: 'Track',
       }
 
-    if (pipe(raw, StringUtils.matches(config.epRegex))) {
-      return {
-        name: StringUtils.cleanWhitespaces(raw.replace(config.epRegex, '')).trim(),
-        type: 'EP',
-      }
-    }
-
-    return {
-      name: StringUtils.cleanWhitespaces(raw).trim(),
-      type: 'LP',
-    }
+    return pipe(
+      config.epRegex,
+      List.findFirst(regex => pipe(raw, StringUtils.matches(regex))),
+      Maybe.fold<RegExp, Album>(
+        () => ({
+          name: StringUtils.cleanWhitespaces(raw).trim(),
+          type: 'LP',
+        }),
+        regex => ({
+          name: StringUtils.cleanWhitespaces(raw.replace(regex, ' ')).trim(),
+          type: 'EP',
+        }),
+      ),
+    )
   }
 
   export const stringify = (album: Album): string => {
