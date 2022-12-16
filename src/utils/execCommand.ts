@@ -60,6 +60,8 @@ export const execYoutubeDl: ExecYoutubeDl = url =>
         'mp3',
         '--audio-quality',
         '0',
+        '-o',
+        '%(title)s.$(ext)s',
         Url.unwrap(url),
       ],
       data => Console.log(data.replace(newLines, '')),

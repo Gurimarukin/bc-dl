@@ -1,10 +1,11 @@
-import { flow, not, pipe } from 'fp-ts/function'
+import { predicate } from 'fp-ts'
+import { flow, pipe } from 'fp-ts/function'
 
 import { Maybe, mkString_ } from './fp'
 
 export namespace StringUtils {
   export const isEmpty = (str: string): str is '' => str === ''
-  export const isNonEmpty = not(isEmpty)
+  export const isNonEmpty = predicate.not(isEmpty)
 
   const margin = /^[^\n\S]*\|/gm
   export const stripMargins = (str: string): string => str.replace(margin, '')
@@ -30,7 +31,7 @@ export namespace StringUtils {
   export const cleanWhitespaces = (str: string): string => str.replace(whitespaces, ' ')
 
   const spaceDash = / -/g
-  const irrelevantChars = /[_'\-]/g
+  const irrelevantChars = /[_'\-：]/g // FULLWIDTH COLON: ：
   export const cleanForCompare = (str: string): string =>
     cleanWhitespaces(
       str

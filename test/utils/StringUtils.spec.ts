@@ -37,4 +37,14 @@ describe('StringUtils.cleanForCompare', () => {
     expect(cleanedTrack).toStrictEqual('set sound=cclassical')
     expect(cleanedFile.includes(cleanedTrack)).toStrictEqual(true)
   })
+
+  it('should clean 4', () => {
+    const cleanedFile = StringUtils.cleanForCompare(
+      'Harakiri for the Sky - Homecoming： Denied!.mp3',
+    )
+    const cleanedTrack = StringUtils.cleanForCompare('Homecoming: Denied!')
+    expect(cleanedFile).toStrictEqual('harakiri for the sky homecoming denied!.mp3')
+    expect(cleanedTrack).toStrictEqual('homecoming denied!')
+    expect(cleanedFile.includes(cleanedTrack)).toStrictEqual(true)
+  })
 })
