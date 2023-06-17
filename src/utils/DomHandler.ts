@@ -89,7 +89,7 @@ function querySelectorAllNonEmpty<E extends Element>(
                   NonEmptyArray.of(
                     `Element ${i} matching "${selector}" - expected ${TElement.name(
                       type,
-                    )} got <${e.nodeName.toLowerCase()} />`,
+                    )} got <${e.nodeName.toLowerCase()}>`,
                   ),
                 ),
         ),
