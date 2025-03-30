@@ -1,22 +1,22 @@
-import { pipe } from 'fp-ts/function'
+import { pipe } from "fp-ts/function";
 
-import { NonEmptyArray } from '../../utils/fp'
-import { Album } from '../Album'
-import { Genre } from '../Genre'
-import { Url } from '../Url'
-import { AlbumMetadata as AlbumMetadata_ } from './AlbumMetadata'
-import { Track as Track_ } from './Track'
-import { fromAlbumDocument as fromAlbumDocument_ } from './fromAlbumDocument'
-import { fromTrackDocument as fromTrackDocument_ } from './fromTrackDocument'
+import { NonEmptyArray } from "../../utils/fp";
+import { Album } from "../Album";
+import { Genre } from "../Genre";
+import { Url } from "../Url";
+import { AlbumMetadata as AlbumMetadata_ } from "./AlbumMetadata";
+import { Track as Track_ } from "./Track";
+import { fromAlbumDocument as fromAlbumDocument_ } from "./fromAlbumDocument";
+import { fromTrackDocument as fromTrackDocument_ } from "./fromTrackDocument";
 
-export type AlbumMetadata = AlbumMetadata_
+export type AlbumMetadata = AlbumMetadata_;
 
 export namespace AlbumMetadata {
-  export type Track = Track_
-  export const Track = Track_
+  export type Track = Track_;
+  export const Track = Track_;
 
-  export const fromAlbumDocument = fromAlbumDocument_
-  export const fromTrackDocument = fromTrackDocument_
+  export const fromAlbumDocument = fromAlbumDocument_;
+  export const fromTrackDocument = fromTrackDocument_;
 
   export const stringify = ({
     artist,
@@ -29,5 +29,5 @@ export namespace AlbumMetadata {
     `AlbumMetadata(${artist}, ${Album.stringify(album)}, ${year}, ${Genre.unwrap(genre)}, ${pipe(
       tracks,
       NonEmptyArray.stringify(Track.stringify),
-    )}, ${Url.unwrap(coverUrl)})`
+    )}, ${Url.unwrap(coverUrl)})`;
 }

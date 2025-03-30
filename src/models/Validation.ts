@@ -1,7 +1,9 @@
-import { Either, NonEmptyArray } from '../utils/fp'
+import { Either, NonEmptyArray } from "../utils/fp";
 
-export type Validation<A> = Either<NonEmptyArray<string>, A>
+export type Validation<A> = Either<NonEmptyArray<string>, A>;
 
 export namespace Validation {
-  export const validation = Either.getApplicativeValidation(NonEmptyArray.getSemigroup<string>())
+  export const validation = Either.getApplicativeValidation(
+    NonEmptyArray.getSemigroup<string>(),
+  );
 }

@@ -1,6 +1,6 @@
-import { flow } from 'fp-ts/function'
+import { flow } from "fp-ts/function";
 
-import { List, Maybe, NonEmptyArray } from './fp'
+import { List, Maybe, NonEmptyArray } from "./fp";
 
 export const listFoldLength = <A, B>(
   onEmpty: () => B,
@@ -11,6 +11,7 @@ export const listFoldLength = <A, B>(
     NonEmptyArray.fromReadonlyArray,
     Maybe.fold(
       () => onEmpty(),
-      nea => (nea.length === 1 ? onOne(NonEmptyArray.head(nea)) : onMultiple(nea)),
+      (nea) =>
+        nea.length === 1 ? onOne(NonEmptyArray.head(nea)) : onMultiple(nea),
     ),
-  )
+  );

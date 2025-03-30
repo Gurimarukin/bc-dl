@@ -9,5 +9,6 @@
 
 /.eslintcache
 /coverage
+/node_modules/.cache/prettier/.prettier-cache
 /tmp.sh
 /tsconfig.tsbuildinfo
