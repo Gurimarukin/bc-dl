@@ -38,7 +38,7 @@
     "noEmit": true,
     "isolatedModules": true,
     "incremental": true,
-    "lib": ["ESNext"],
+    "lib": ["DOM", "DOM.Iterable", "ESNext"],
 
     // Bundler mode
 
