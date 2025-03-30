@@ -1,5 +1,13 @@
+.pnp.*
+.yarn/*
+!.yarn/cache
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/sdks
+!.yarn/versions
+
 /.eslintcache
 /coverage
-/lib
-/node_modules
 /tmp.sh
+/tsconfig.tsbuildinfo

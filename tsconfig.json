@@ -1,11 +1,62 @@
 {
-  "extends": "@type-config/strict",
   "compilerOptions": {
-    "outDir": "./lib",
-    "incremental": true,
+    //
+    // @type-config/strict
+    //
+
+    "module": "ESNext",
+    // "target": "ES2015",
+    "noEmitOnError": true,
+
+    "declaration": true,
+    "sourceMap": true,
+
+    "moduleResolution": "node",
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+
+    "importHelpers": true,
+
+    "strict": true,
+    "noFallthroughCasesInSwitch": true,
+    "noImplicitReturns": true,
+    "noImplicitOverride": true,
+    // "noUnusedParameters": true,
+    // "noUnusedLocals": true,
+    "noUncheckedIndexedAccess": true,
+    "noPropertyAccessFromIndexSignature": true,
+    "useUnknownInCatchVariables": true,
+
+    //
+    // Custom
+    //
+
+    "target": "ES2017",
+    "allowJs": false,
+    "skipLibCheck": true,
     "noEmit": true,
-    "noUnusedLocals": false,
-    "noUnusedParameters": false
+    "isolatedModules": true,
+    "incremental": true,
+    "lib": ["ESNext"],
+
+    // Bundler mode
+
+    // "moduleResolution": "bundler",
+    // "allowImportingTsExtensions": true,
+    // "isolatedModules": true,
+    // "moduleDetection": "force",
+
+    // Linting
+
+    "noUncheckedSideEffectImports": true,
+    "useDefineForClassFields": true,
+
+    // Checked by eslint
+    "noUnusedParameters": false,
+    "noUnusedLocals": false
   },
+
+  //
   "include": ["./src", "./test"]
 }

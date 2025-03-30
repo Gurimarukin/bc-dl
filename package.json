@@ -2,29 +2,27 @@
   "name": "bc-dl",
   "version": "0.1.0",
   "description": "youtube-dl for Bandcamp, with mp3 tags",
-  "main": "lib/index.js",
   "repository": "https://github.com/Gurimarukin/bc-dl.git",
   "author": "Gurimarukin",
   "license": "MIT",
+  "type": "module",
+  "engines": {
+    "node": "22.14.0"
+  },
+  "packageManager": "yarn@4.8.1",
   "scripts": {
-    "build": "tsc -p ./tsconfig.build.json",
-    "dl": "node --unhandled-rejections=strict lib/dl.js",
-    "tag": "node --unhandled-rejections=strict lib/tag.js",
-    "tsDl": "NODE_OPTIONS='--unhandled-rejections=strict' ts-node src/dl.ts",
-    "tsTag": "NODE_OPTIONS='--unhandled-rejections=strict' ts-node src/tag.ts",
-    "prettier": "prettier --check \"./{src,test}/**/*.ts\"",
-    "prettierFix": "prettier --write \"./{src,test}/**/*.ts\"",
-    "lint": "eslint --cache --max-warnings 0 --ext .ts src test",
-    "lintFix": "eslint --fix --cache --max-warnings 0 --ext .ts src test",
-    "jest": "jest",
-    "jestUnit": "jest --testPathPattern=.*\\.spec\\.ts",
-    "jestCoverage": "jest --ci --coverage",
-    "style": "yarn run prettier && yarn run lint",
-    "test": "yarn run style && yarn run jestUnit"
+    "dl": "vite-node src/dl.ts",
+    "tag": "vite-node src/tag.ts",
+    "~compile": "tsc -w --preserveWatchOutput",
+    "_prettier": "prettier .",
+    "formatCheck": "yarn _prettier --check",
+    "format": "yarn _prettier --write",
+    "lint": "eslint . --cache --max-warnings 0",
+    "lintFix": "yarn lint --fix",
+    "jestUnit": "jest --testPathPattern=.*\\.spec\\.ts"
   },
   "devDependencies": {
     "@trivago/prettier-plugin-sort-imports": "3.1.1",
-    "@type-config/strict": "1.1.1",
     "@types/jest": "26.0.20",
     "@types/jsdom": "16.2.6",
     "@types/rimraf": "3.0.0",
@@ -48,6 +46,6 @@
     "rimraf": "3.0.2",
     "ts-jest": "26.5.0",
     "ts-node": "9.1.1",
-    "typescript": "4.1.3"
+    "typescript": "5.8.2"
   }
 }

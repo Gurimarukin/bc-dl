@@ -1,0 +1,42 @@
+name: ci
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [22.x]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - run: corepack enable
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: yarn
+
+      - run: yarn install --frozen-lockfile
+
+      # typescript
+      - run: yarn tsc
+
+      # format
+      - run: yarn formatCheck
+
+      # lint
+      - run: yarn lint
+
+      # # depcruise
+      # - run: yarn dc
+
+      # test
+      - run: yarn jestCoverage
