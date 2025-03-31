@@ -1,12 +1,11 @@
 /* eslint-disable functional/no-return-void */
-import { List } from 'decline-ts/lib/utils/fp'
 import { pipe } from 'fp-ts/function'
 
 import { ExecYoutubeDl, HttpGet, HttpGetBuffer } from '../../src/features/common'
 import { Dir, FileOrDir } from '../../src/models/FileOrDir'
 import { Url } from '../../src/models/Url'
 import { FsUtils } from '../../src/utils/FsUtils'
-import { Future } from '../../src/utils/fp'
+import { Future, List } from '../../src/utils/fp'
 
 export const cleanMusicDir = (musicDir: Dir): Future<void> =>
   pipe(
@@ -51,12 +50,11 @@ const copyMp3DirContent = (dir: string): Future<void> => {
     Future.chain(({ mp3DirContent, cwd }) =>
       pipe(
         mp3DirContent,
-        List.map(f =>
+        List.traverse(Future.ApplicativePar)(f =>
           FileOrDir.isDir(f)
             ? Future.left(Error(`Unexpected directory: ${f.path}`))
             : FsUtils.copyFile(f, pipe(cwd, Dir.joinFile(f.basename))),
         ),
-        Future.sequenceArray,
       ),
     ),
     Future.map(() => {}),

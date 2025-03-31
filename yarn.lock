@@ -1576,17 +1576,17 @@ __metadata:
     "@trivago/prettier-plugin-sort-imports": "npm:5.2.2"
     "@types/jest": "npm:29.5.14"
     "@types/jsdom": "npm:16.2.6"
-    decline-ts: "npm:0.9.0"
+    decline-ts: "npm:0.10.0"
     eslint: "npm:9.23.0"
     eslint-plugin-fp-ts: "npm:0.4.0"
     eslint-plugin-functional: "npm:9.0.1"
-    fp-ts: "npm:2.11.7"
-    io-ts: "npm:2.2.13"
+    fp-ts: "npm:2.16.9"
+    io-ts: "npm:2.2.22"
     jest: "npm:29.7.0"
     jsdom: "npm:16.4.0"
     ky: "npm:1.8.0"
-    monocle-ts: "npm:2.3.5"
-    newtype-ts: "npm:0.3.4"
+    monocle-ts: "npm:2.3.13"
+    newtype-ts: "npm:0.3.5"
     node-id3: "npm:0.2.8"
     prettier: "npm:3.5.3"
     ts-jest: "npm:29.3.1"
@@ -1941,10 +1941,13 @@ __metadata:
   languageName: node
   linkType: hard
 
-"decline-ts@npm:0.9.0":
-  version: 0.9.0
-  resolution: "decline-ts@npm:0.9.0"
-  checksum: 10c0/738e95cdca4914ef513de982088bb1484eb670e401986e8b88cf9cb48f6f05b7442c1372a0efb65393d22b19b4a8a148ee04d2d81f92914a09a577266d5580c6
+"decline-ts@npm:0.10.0":
+  version: 0.10.0
+  resolution: "decline-ts@npm:0.10.0"
+  peerDependencies:
+    fp-ts: ^2.9.5
+    io-ts: ^2.2.16
+  checksum: 10c0/05a8a1e060355a461e181f14717aa94181cdb73f65bcb1af7038cf8846bf01e931d8f6a0d7f357569a3121992f946b6e0f1f7425623aaad9a95d9aa1b517fb34
   languageName: node
   linkType: hard
 
@@ -2530,14 +2533,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"fp-ts@npm:2.11.7":
-  version: 2.11.7
-  resolution: "fp-ts@npm:2.11.7"
-  checksum: 10c0/4ffdbf697c9a009c87c385377ef8a5d9b993f720d06964c8b4f82b96d32cf1144eb62f39ff9163add7ef1d76e8c79b88785f34c86ac6b5ed0e204f991345ae47
-  languageName: node
-  linkType: hard
-
-"fp-ts@npm:^2.9.3":
+"fp-ts@npm:2.16.9, fp-ts@npm:^2.9.3":
   version: 2.16.9
   resolution: "fp-ts@npm:2.16.9"
   checksum: 10c0/704fcc2e792bd17cb653e7b62b5d9d905c04327776df8bf2a1f67e1c6823b06c7c36036345279ac04f0b6b7214ad01f91f109f548e144c9f866a491392fbfbcc
@@ -2873,12 +2869,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"io-ts@npm:2.2.13":
-  version: 2.2.13
-  resolution: "io-ts@npm:2.2.13"
+"io-ts@npm:2.2.22":
+  version: 2.2.22
+  resolution: "io-ts@npm:2.2.22"
   peerDependencies:
-    fp-ts: ^2.0.0
-  checksum: 10c0/599d6b62b3e247bc22fc373b266e7b77b8a71ee21f930ac4244e29cf94dfcbd0a5c250b5963bcfca0e0938aed656c4919346b5cf8b5364f05d9487b5fa4ac9d8
+    fp-ts: ^2.5.0
+  checksum: 10c0/5382c2f09807d8ef7e468cb0061f44ccc691d0173b376d1f8a50ef5cf3c1e38b1402030817fa7a3402969c842de2386ef0d19f6437b0fdfca203a9c5fc3d493a
   languageName: node
   linkType: hard
 
@@ -4016,12 +4012,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"monocle-ts@npm:2.3.5":
-  version: 2.3.5
-  resolution: "monocle-ts@npm:2.3.5"
+"monocle-ts@npm:2.3.13":
+  version: 2.3.13
+  resolution: "monocle-ts@npm:2.3.13"
   peerDependencies:
-    fp-ts: ^2.0.0
-  checksum: 10c0/8a1b715b5de8ff858f94fb82fd858025979d4faa4f2334dd48db6446d40b422fd3e47f407bd4a3b25b2a9b0150ca3fec7c5e1fa57444ade28f03004d21f03458
+    fp-ts: ^2.5.0
+  checksum: 10c0/8f1673abb7def3225a33f962423ba592202afaac9fe6b18d0af6b84083d18c0e0939f59677bff5a1aa86ca3f6381220dc800b36823fd22fa69283f3cd3f7b4e2
   languageName: node
   linkType: hard
 
@@ -4046,13 +4042,13 @@ __metadata:
   languageName: node
   linkType: hard
 
-"newtype-ts@npm:0.3.4":
-  version: 0.3.4
-  resolution: "newtype-ts@npm:0.3.4"
+"newtype-ts@npm:0.3.5":
+  version: 0.3.5
+  resolution: "newtype-ts@npm:0.3.5"
   peerDependencies:
     fp-ts: ^2.0.0
     monocle-ts: ^2.0.0
-  checksum: 10c0/51d6e56749261393db31aac11b285ef30b4320800e49a097519164a0bcab5e6cd4708757c1e3ec641947640d585d7ae133907fe80f01a30aada2b856394a0f15
+  checksum: 10c0/4bd164d33f4569f7245ed3e656796adb4bf15f11160ff755e3a5c0ef85dde13699ae80b94c38d0ff43d1f3625d698897afb6a74a7c65b90bd9786d3958423edf
   languageName: node
   linkType: hard
 

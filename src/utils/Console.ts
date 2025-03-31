@@ -1,6 +1,4 @@
-import { Either } from 'decline-ts/lib/utils/fp'
-
-import { IO, List } from './fp'
+import { Either, IO, List } from './fp'
 
 export namespace Console {
   export const log =
