@@ -1,5 +1,3 @@
-import sortImports from '@trivago/prettier-plugin-sort-imports'
-
 export default {
   endOfLine: 'lf',
   printWidth: 100,
@@ -10,5 +8,5 @@ export default {
   importOrder: ['<THIRD_PARTY_MODULES>', '^[./]'],
   importOrderSeparation: true,
   importOrderSortSpecifiers: true,
-  plugins: [sortImports],
+  plugins: ['@trivago/prettier-plugin-sort-imports'],
 }

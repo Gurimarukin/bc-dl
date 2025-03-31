@@ -1,6 +1,5 @@
 .pnp.*
 .yarn/*
-!.yarn/cache
 !.yarn/patches
 !.yarn/plugins
 !.yarn/releases
@@ -9,6 +8,6 @@
 
 /.eslintcache
 /coverage
-/node_modules/.cache/prettier/.prettier-cache
+/node_modules
 /tmp.sh
 /tsconfig.tsbuildinfo
