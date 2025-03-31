@@ -12,10 +12,11 @@ export namespace StringUtils {
 
   export const mkString = mkString_;
 
-  const matcher =
-    <A>(regex: RegExp, f: (arr: RegExpMatchArray) => Maybe<A>) =>
-    (str: string): Maybe<A> =>
-      pipe(str.match(regex), Maybe.fromNullable, Maybe.chain(f));
+  const matcher = <A>(
+    regex: RegExp,
+    f: (arr: RegExpMatchArray) => Maybe<A>
+  ) => (str: string): Maybe<A> =>
+    pipe(str.match(regex), Maybe.fromNullable, Maybe.chain(f));
 
   export const matches = (regex: RegExp): ((str: string) => boolean) =>
     flow(matcher(regex, Maybe.some), Maybe.isSome);
@@ -26,7 +27,7 @@ export namespace StringUtils {
   export const padNumber = (n: number, size = 2): string =>
     String(n).padStart(size, "0");
 
-  const fileNameForbiddenChars = /[<>:"/\?\*\|\\]/g;
+  const fileNameForbiddenChars = /[<>:"/?*|\\]/g;
   export const cleanFileName = (str: string): string =>
     str.replace(fileNameForbiddenChars, "");
 
@@ -46,12 +47,12 @@ export namespace StringUtils {
         // needs to match Track(10, "AM:PM")
         .replace(spaceDash, "")
         .replace(fileNameForbiddenChars, "")
-        .replace(irrelevantChars, ""),
+        .replace(irrelevantChars, "")
     );
 
   const weirdCharSometimesReturnedByBandcamp = new RegExp(
     `${String.fromCharCode(8203)}+`,
-    "g",
+    "g"
   );
   export const cleanHtml = (str: string): string =>
     cleanWhitespaces(
@@ -59,6 +60,6 @@ export namespace StringUtils {
         // newline please
         .trim()
         .replace(weirdCharSometimesReturnedByBandcamp, "")
-        .normalize(),
+        .normalize()
     );
 }

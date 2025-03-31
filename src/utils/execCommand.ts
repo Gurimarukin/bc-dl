@@ -18,11 +18,12 @@ type Result = Either<ExecFailure, string>;
 export const execCommand = (
   command: string,
   args: List<string> = [],
-  onStdout: (data: string) => IO<void>,
+  onStdout: (data: string) => IO<void>
 ): Future<Result> =>
   Future.tryCatch(
     () =>
-      /* eslint-disable functional/no-let, functional/no-expression-statement, functional/no-return-void */
+      /* eslint-disable functional/no-let, functional/no-expression-statements, functional/no-return-void */
+      // eslint-disable-next-line functional/no-promise-reject
       new Promise<Result>((resolve, reject) => {
         let stdout = "";
         const stderr = "";
@@ -41,11 +42,11 @@ export const execCommand = (
                   cmd: pipe([command, ...args], StringUtils.mkString(" ")),
                   code: Maybe.fromNullable(code),
                   stderr,
-                }),
-          ),
+                })
+          )
         );
-      }),
-    /* eslint-enable functional/no-let, functional/no-expression-statement, functional/no-return-void */
+      })
+    /* eslint-enable functional/no-let, functional/no-expression-statements, functional/no-return-void */
   );
 
 const newLines = /\n*$/;
@@ -64,17 +65,19 @@ export const execYoutubeDl: ExecYoutubeDl = (url) =>
         "%(title)s.$(ext)s",
         Url.unwrap(url),
       ],
-      (data) => Console.log(data.replace(newLines, "")),
+      (data) => Console.log(data.replace(newLines, ""))
     ),
     Future.chain(
       Either.fold(
         (e) =>
           Future.left(
             Error(
-              `Command ${e.cmd} exited with code: ${Maybe.toNullable(e.code)}\n${e.stderr}`,
-            ),
+              `Command ${e.cmd} exited with code: ${Maybe.toNullable(
+                e.code
+              )}\n${e.stderr}`
+            )
           ),
-        () => Future.unit,
-      ),
-    ),
+        () => Future.unit
+      )
+    )
   );

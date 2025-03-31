@@ -15,17 +15,16 @@ import * as C from "io-ts/Codec";
 import * as D from "io-ts/Decoder";
 import { Encoder } from "io-ts/Encoder";
 
-export const todo = (...[]: List<unknown>): never => {
-  // eslint-disable-next-line functional/no-throw-statement
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export const todo = (..._: List<unknown>): never => {
+  // eslint-disable-next-line functional/no-throw-statements
   throw Error("Missing implementation");
 };
 
-export const inspect =
-  (...label: List<unknown>) =>
-  <A>(a: A): A => {
-    console.log(...label, a);
-    return a;
-  };
+export const inspect = (...label: List<unknown>) => <A>(a: A): A => {
+  console.log(...label, a);
+  return a;
+};
 
 export type Dict<K extends string, A> = readonlyRecord.ReadonlyRecord<K, A>;
 export const Dict = readonlyRecord;
@@ -42,14 +41,14 @@ export const Maybe = {
 
 export type NonEmptyArray<A> = readonlyNonEmptyArray.ReadonlyNonEmptyArray<A>;
 const neaDecoder = <A>(
-  codec: D.Decoder<unknown, A>,
+  codec: D.Decoder<unknown, A>
 ): D.Decoder<unknown, NonEmptyArray<A>> =>
   pipe(
     D.array(codec),
-    D.refine<List<A>, NonEmptyArray<A>>(List.isNonEmpty, "NonEmptyArray"),
+    D.refine<List<A>, NonEmptyArray<A>>(List.isNonEmpty, "NonEmptyArray")
   );
 const neaEncoder = <O, A>(
-  codec: Encoder<O, A>,
+  codec: Encoder<O, A>
 ): Encoder<NonEmptyArray<O>, NonEmptyArray<A>> => ({
   encode: (a) => pipe(a, NonEmptyArray.map(codec.encode)),
 });
@@ -58,12 +57,12 @@ export const NonEmptyArray = {
   stringify: <A>(str: (a: A) => string): ((nea: NonEmptyArray<A>) => string) =>
     flow(
       readonlyNonEmptyArray.map(str),
-      mkString_("NonEmptyArray(", ", ", ")"),
+      mkString_("NonEmptyArray(", ", ", ")")
     ),
   decoder: neaDecoder,
   encoder: neaEncoder,
   codec: <O, A>(
-    codec: C.Codec<unknown, O, A>,
+    codec: C.Codec<unknown, O, A>
   ): C.Codec<unknown, NonEmptyArray<O>, NonEmptyArray<A>> =>
     C.make(neaDecoder(codec), neaEncoder(codec)),
 };
@@ -95,9 +94,9 @@ export const Try = {
     pipe(
       t,
       Either.getOrElse<Error, A>((e) => {
-        // eslint-disable-next-line functional/no-throw-statement
+        // eslint-disable-next-line functional/no-throw-statements
         throw e;
-      }),
+      })
     ),
 };
 
@@ -111,7 +110,7 @@ export const Future = {
     taskEither.tryCatch(f, unknownAsError),
   unit: futureRight<void>(undefined),
   recover: <A>(
-    onError: (e: Error) => Future<A>,
+    onError: (e: Error) => Future<A>
   ): ((future: Future<A>) => Future<A>) =>
     task.chain(either.fold(onError, futureRight)),
   runUnsafe: <A>(fa: Future<A>): Promise<A> => pipe(fa, task.map(Try.get))(),
@@ -129,7 +128,7 @@ export const IO = {
   runFuture: <A>(f: Future<A>): IO<void> =>
     // eslint-disable-next-line functional/no-return-void
     ioTryCatch(() => {
-      // eslint-disable-next-line functional/no-expression-statement
+      // eslint-disable-next-line functional/no-expression-statements
       Future.runUnsafe(f);
     }),
   runUnsafe: <A>(ioA: IO<A>): A => Try.get(ioA()),
@@ -143,12 +142,12 @@ export function mkString_(sep: string): (list: List<string>) => string;
 export function mkString_(
   start: string,
   sep: string,
-  end: string,
+  end: string
 ): (list: List<string>) => string;
 export function mkString_(
   startOrSep: string,
   sep?: string,
-  end?: string,
+  end?: string
 ): (list: List<string>) => string {
   return (list) =>
     sep !== undefined && end !== undefined

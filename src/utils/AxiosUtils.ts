@@ -14,37 +14,36 @@ export namespace AxiosUtils {
       axios.request<unknown>({
         ...config,
         url: config.url === undefined ? undefined : Url.unwrap(config.url),
-      }),
+      })
     );
 
   export namespace Document {
     export const get = (
       url: Url,
-      config: Omit<Config, "method" | "url" | "responseType"> = {},
+      config: Omit<Config, "method" | "url" | "responseType"> = {}
     ): Future<AxiosResponse<string>> =>
       pipe(
         request({ ...config, method: "get", url, responseType: "document" }),
         Future.chain((response) =>
           typeof response.data !== "string"
             ? Future.left(Error("Weird response from axios"))
-            : Future.right({ ...response, data: response.data }),
-        ),
+            : Future.right({ ...response, data: response.data })
+        )
       );
   }
 
-  // eslint-disable-next-line no-shadow
   export namespace ArrayBuffer {
     export const get = (
       url: Url,
-      config: Omit<Config, "method" | "url" | "responseType"> = {},
+      config: Omit<Config, "method" | "url" | "responseType"> = {}
     ): Future<AxiosResponse<Buffer>> =>
       pipe(
         request({ ...config, method: "get", url, responseType: "arraybuffer" }),
         Future.chain((response) =>
           !(response.data instanceof Buffer)
             ? Future.left(Error("Weird response from axios"))
-            : Future.right({ ...response, data: response.data }),
-        ),
+            : Future.right({ ...response, data: response.data })
+        )
       );
   }
 }

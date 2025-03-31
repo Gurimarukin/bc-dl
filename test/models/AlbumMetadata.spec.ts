@@ -19,25 +19,25 @@ describe("EP regex", () => {
       expect(
         pipe(
           config.epRegex,
-          List.some((regex) => pipe(str, StringUtils.matches(regex))),
-        ),
+          List.some((regex) => pipe(str, StringUtils.matches(regex)))
+        )
       );
 
     const expectAlbumName = (str: string): jest.JestMatchers<string> =>
       expect(Album.fromRaw({ isTrack: false })(str).name);
 
-    /* eslint-disable functional/no-expression-statement */
+    /* eslint-disable functional/no-expression-statements */
     expectEpRegex("Deep in the Woods EP").toStrictEqual(true);
     expectAlbumName("Deep in the Woods EP").toStrictEqual("Deep in the Woods");
 
     expectEpRegex("Deep in the Woods E.P.").toStrictEqual(true);
     expectAlbumName("Deep in the Woods E.P.").toStrictEqual(
-      "Deep in the Woods",
+      "Deep in the Woods"
     );
 
     expectEpRegex("Deep in the Woods E . P .").toStrictEqual(true);
     expectAlbumName("Deep in the Woods E . P .").toStrictEqual(
-      "Deep in the Woods",
+      "Deep in the Woods"
     );
 
     expectEpRegex("Deep in the Woods EP.").toStrictEqual(true);
@@ -48,12 +48,12 @@ describe("EP regex", () => {
 
     expectEpRegex("EP . Deep in the Woods").toStrictEqual(true);
     expectAlbumName("EP . Deep in the Woods").toStrictEqual(
-      "Deep in the Woods",
+      "Deep in the Woods"
     );
 
     expectEpRegex("Deep in the Woods EP .").toStrictEqual(true);
     expectAlbumName("Deep in the Woods EP .").toStrictEqual(
-      "Deep in the Woods",
+      "Deep in the Woods"
     );
 
     expectEpRegex("EP Deep in the Woods").toStrictEqual(true);
@@ -64,17 +64,17 @@ describe("EP regex", () => {
 
     expectEpRegex("EP - Deep in the Woods").toStrictEqual(true);
     expectAlbumName("EP - Deep in the Woods").toStrictEqual(
-      "Deep in the Woods",
+      "Deep in the Woods"
     );
 
     expectEpRegex("(EP) Deep in the Woods").toStrictEqual(true);
     expectAlbumName("(EP) Deep in the Woods").toStrictEqual(
-      "Deep in the Woods",
+      "Deep in the Woods"
     );
 
     expectEpRegex("[EP] Deep in the Woods").toStrictEqual(true);
     expectAlbumName("[EP] Deep in the Woods").toStrictEqual(
-      "Deep in the Woods",
+      "Deep in the Woods"
     );
 
     expectEpRegex("Deep in the Woods EP").toStrictEqual(true);
@@ -85,17 +85,17 @@ describe("EP regex", () => {
 
     expectEpRegex("Deep in the Woods - EP").toStrictEqual(true);
     expectAlbumName("Deep in the Woods - EP").toStrictEqual(
-      "Deep in the Woods",
+      "Deep in the Woods"
     );
 
     expectEpRegex("Deep in the Woods (EP)").toStrictEqual(true);
     expectAlbumName("Deep in the Woods (EP)").toStrictEqual(
-      "Deep in the Woods",
+      "Deep in the Woods"
     );
 
     expectEpRegex("Deep in the Woods [EP]").toStrictEqual(true);
     expectAlbumName("Deep in the Woods [EP]").toStrictEqual(
-      "Deep in the Woods",
+      "Deep in the Woods"
     );
 
     expectEpRegex("Haha - EP - EP name").toStrictEqual(true);
@@ -129,7 +129,7 @@ describe("EP regex", () => {
 
     expectEpRegex("ABCD EPFGHI").toStrictEqual(false);
     expectAlbumName("ABCD EPFGHI").toStrictEqual("ABCD EPFGHI");
-    /* eslint-enable functional/no-expression-statement */
+    /* eslint-enable functional/no-expression-statements */
   });
 });
 
@@ -139,13 +139,13 @@ describe("AlbumMetadata", () => {
       FsUtils.readFile(
         pipe(
           Dir.of(__dirname),
-          Dir.joinFile("..", "resources", "deep-in-the-woods-ep.html"),
-        ),
+          Dir.joinFile("..", "resources", "deep-in-the-woods-ep.html")
+        )
       ),
       Future.map((html) => {
         const domHandler = DomHandler.of(html);
         const result = AlbumMetadata.fromAlbumDocument(Genre.wrap("Stoner"))(
-          domHandler,
+          domHandler
         );
 
         expect(Either.isRight(result)).toStrictEqual(true);
@@ -165,7 +165,7 @@ describe("AlbumMetadata", () => {
           coverUrl: Url.wrap("https://f4.bcbits.com/img/a2730847106_16.jpg"),
         });
       }),
-      Future.runUnsafe,
+      Future.runUnsafe
     ));
 
   it("should parse non EP", () =>
@@ -173,13 +173,13 @@ describe("AlbumMetadata", () => {
       FsUtils.readFile(
         pipe(
           Dir.of(__dirname),
-          Dir.joinFile("..", "resources", "talking-to-the-moon.html"),
-        ),
+          Dir.joinFile("..", "resources", "talking-to-the-moon.html")
+        )
       ),
       Future.map((html) => {
         const domHandler = DomHandler.of(html);
         const result = AlbumMetadata.fromAlbumDocument(Genre.wrap("Stoner"))(
-          domHandler,
+          domHandler
         );
 
         expect(Either.isRight(result)).toStrictEqual(true);
@@ -206,18 +206,18 @@ describe("AlbumMetadata", () => {
           coverUrl: Url.wrap("https://f4.bcbits.com/img/a1767795542_16.jpg"),
         });
       }),
-      Future.runUnsafe,
+      Future.runUnsafe
     ));
 
   it('should parse non EP (with "EP" in title)', () =>
     pipe(
       FsUtils.readFile(
-        pipe(Dir.of(__dirname), Dir.joinFile("..", "resources", "deeper.html")),
+        pipe(Dir.of(__dirname), Dir.joinFile("..", "resources", "deeper.html"))
       ),
       Future.map((html) => {
         const domHandler = DomHandler.of(html);
         const result = AlbumMetadata.fromAlbumDocument(Genre.wrap("Electro"))(
-          domHandler,
+          domHandler
         );
 
         expect(Either.isRight(result)).toStrictEqual(true);
@@ -244,6 +244,6 @@ describe("AlbumMetadata", () => {
           coverUrl: Url.wrap("https://f4.bcbits.com/img/a2600445169_16.jpg"),
         });
       }),
-      Future.runUnsafe,
+      Future.runUnsafe
     ));
 });
