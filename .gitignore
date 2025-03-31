@@ -9,5 +9,4 @@
 /.eslintcache
 /coverage
 /node_modules
-/tmp.sh
 /tsconfig.tsbuildinfo
