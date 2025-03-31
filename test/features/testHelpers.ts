@@ -1,5 +1,4 @@
 /* eslint-disable functional/no-return-void */
-import { AxiosResponse } from 'axios'
 import { List } from 'decline-ts/lib/utils/fp'
 import { pipe } from 'fp-ts/function'
 
@@ -30,17 +29,8 @@ export const httpGetMocked: HttpGet = url => {
   return Future.left(Error(`Unknown url: ${Url.unwrap(url)}`))
 }
 
-const okResponseDocumentFromFile = (file: string): Future<AxiosResponse<string>> =>
-  pipe(
-    FsUtils.readFile(pipe(Dir.of(__dirname), Dir.joinDir('..', 'resources'), Dir.joinFile(file))),
-    Future.map(data => ({
-      status: 200,
-      statusText: 'OK',
-      headers: {},
-      config: {},
-      data,
-    })),
-  )
+const okResponseDocumentFromFile = (file: string): Future<string> =>
+  FsUtils.readFile(pipe(Dir.of(__dirname), Dir.joinDir('..', 'resources'), Dir.joinFile(file)))
 
 export const execYoutubeDlMocked: ExecYoutubeDl = url => {
   if (url === Url.wrap('https://inlustris.bandcamp.com/album/stella-splendens')) {
@@ -83,11 +73,4 @@ export const httpGetBufferMocked: HttpGetBuffer = url => {
   return Future.left(Error(`Unknown url: ${Url.unwrap(url)}`))
 }
 
-const okResponseImage = (image: string): Future<AxiosResponse<Buffer>> =>
-  Future.right({
-    status: 200,
-    statusText: 'OK',
-    headers: {},
-    config: {},
-    data: Buffer.from(image, 'utf-8'),
-  })
+const okResponseImage = (image: string): Future<Buffer> => Future.right(Buffer.from(image, 'utf-8'))

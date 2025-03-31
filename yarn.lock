@@ -1482,15 +1482,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"axios@npm:0.21.1":
-  version: 0.21.1
-  resolution: "axios@npm:0.21.1"
-  dependencies:
-    follow-redirects: "npm:^1.10.0"
-  checksum: 10c0/8633cce2dbe64acdfb82a73ba9c916e4d30eff00cb5ac697be859af9446843944cc663c4aafac1da6a43328aeb6fe778a372841fda27e2af44cdd36dba83b2a4
-  languageName: node
-  linkType: hard
-
 "babel-jest@npm:^29.7.0":
   version: 29.7.0
   resolution: "babel-jest@npm:29.7.0"
@@ -1585,7 +1576,6 @@ __metadata:
     "@trivago/prettier-plugin-sort-imports": "npm:5.2.2"
     "@types/jest": "npm:29.5.14"
     "@types/jsdom": "npm:16.2.6"
-    axios: "npm:0.21.1"
     decline-ts: "npm:0.9.0"
     eslint: "npm:9.23.0"
     eslint-plugin-fp-ts: "npm:0.4.0"
@@ -1594,9 +1584,10 @@ __metadata:
     io-ts: "npm:2.2.13"
     jest: "npm:29.7.0"
     jsdom: "npm:16.4.0"
+    ky: "npm:1.8.0"
     monocle-ts: "npm:2.3.5"
     newtype-ts: "npm:0.3.4"
-    node-id3: "npm:0.2.2"
+    node-id3: "npm:0.2.8"
     prettier: "npm:3.5.3"
     ts-jest: "npm:29.3.1"
     ts-node: "npm:9.1.1"
@@ -2508,16 +2499,6 @@ __metadata:
   version: 3.3.3
   resolution: "flatted@npm:3.3.3"
   checksum: 10c0/e957a1c6b0254aa15b8cce8533e24165abd98fadc98575db082b786b5da1b7d72062b81bfdcd1da2f4d46b6ed93bec2434e62333e9b4261d79ef2e75a10dd538
-  languageName: node
-  linkType: hard
-
-"follow-redirects@npm:^1.10.0":
-  version: 1.15.9
-  resolution: "follow-redirects@npm:1.15.9"
-  peerDependenciesMeta:
-    debug:
-      optional: true
-  checksum: 10c0/5829165bd112c3c0e82be6c15b1a58fa9dcfaede3b3c54697a82fe4a62dd5ae5e8222956b448d2f98e331525f05d00404aba7d696de9e761ef6e42fdc780244f
   languageName: node
   linkType: hard
 
@@ -3736,6 +3717,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"ky@npm:1.8.0":
+  version: 1.8.0
+  resolution: "ky@npm:1.8.0"
+  checksum: 10c0/837369c9812f9de78129a97c1a620ec8308e2fa9d936dc7d975e5d9574e12c298095d5ef95bf6e04a61dded862b1a65df71bc9d3d801913f40d0c11b01d46555
+  languageName: node
+  linkType: hard
+
 "leven@npm:^3.1.0":
   version: 3.1.0
   resolution: "leven@npm:3.1.0"
@@ -4088,12 +4076,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"node-id3@npm:0.2.2":
-  version: 0.2.2
-  resolution: "node-id3@npm:0.2.2"
+"node-id3@npm:0.2.8":
+  version: 0.2.8
+  resolution: "node-id3@npm:0.2.8"
   dependencies:
     iconv-lite: "npm:0.6.2"
-  checksum: 10c0/8ca6744605f7346f3b6d8e1b2cc40af0d37d59898008161ee45bcdedabc31988212678486b69a55c4329537235a595af627ae22c2745b860d47586a4d94d59af
+  checksum: 10c0/b3b8b5152451d2e2c493ad0c87005ec3b22968cbce8613b9f1d56609ae2d1335c09d8a87f7288f3d389c3b9229b17e50afac4a13b6bc195872f2580d5f280eb3
   languageName: node
   linkType: hard
 

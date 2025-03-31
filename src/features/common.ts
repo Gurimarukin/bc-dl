@@ -1,4 +1,3 @@
-import { AxiosResponse } from 'axios'
 import { Command, Opts, codecToDecode } from 'decline-ts'
 import { apply } from 'fp-ts'
 import { flow, identity, not, pipe } from 'fp-ts/function'
@@ -19,8 +18,8 @@ import { StringUtils } from '../utils/StringUtils'
 import { TagsUtils } from '../utils/TagsUtils'
 import { Either, Future, IO, List, Maybe, NonEmptyArray } from '../utils/fp'
 
-export type HttpGet = (url: Url) => Future<AxiosResponse<string>>
-export type HttpGetBuffer = (url: Url) => Future<AxiosResponse<Buffer>>
+export type HttpGet = (url: Url) => Future<string>
+export type HttpGetBuffer = (url: Url) => Future<Buffer>
 export type ExecYoutubeDl = (url: Url) => Future<void>
 
 export type CmdArgs = Command<{
@@ -99,7 +98,7 @@ export const getMetadata =
       Future.Do,
       Future.apS('fromDomHandler', getFromDomHandler(url)),
       Future.apS('response', httpGet(url)),
-      Future.chain(({ fromDomHandler, response: { data: html } }) =>
+      Future.chain(({ fromDomHandler, response: html }) =>
         pipe(
           DomHandler.of(html),
           fromDomHandler(genre),
@@ -130,10 +129,7 @@ const isTrack: (url: Url) => boolean = flow(Url.unwrap, StringUtils.matches(trac
 export const downloadCover =
   (httpGetBuffer: HttpGetBuffer) =>
   (coverUrl: Url): Future<Buffer> =>
-    pipe(
-      httpGetBuffer(coverUrl),
-      Future.map(res => res.data),
-    )
+    httpGetBuffer(coverUrl)
 
 export const getAlbumDir = (musicLibraryDir: Dir, metadata: AlbumMetadata): Dir =>
   pipe(

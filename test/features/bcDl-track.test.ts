@@ -67,7 +67,7 @@ describe('e2e - tracks', () => {
               image: {
                 description: undefined,
                 imageBuffer,
-                mime: 'jpeg',
+                mime: 'image/jpeg',
                 type: { id: 3, name: 'front cover' },
               },
               performerInfo: 'Snakes Of Russia',

@@ -60,7 +60,7 @@ describe('e2e - album', () => {
               image: {
                 description: undefined,
                 imageBuffer,
-                mime: 'jpeg',
+                mime: 'image/jpeg',
                 type: { id: 3, name: 'front cover' },
               },
               performerInfo: 'Inlustris',
@@ -78,7 +78,7 @@ describe('e2e - album', () => {
               image: {
                 description: undefined,
                 imageBuffer,
-                mime: 'jpeg',
+                mime: 'image/jpeg',
                 type: { id: 3, name: 'front cover' },
               },
               performerInfo: 'Inlustris',
@@ -96,7 +96,7 @@ describe('e2e - album', () => {
               image: {
                 description: undefined,
                 imageBuffer,
-                mime: 'jpeg',
+                mime: 'image/jpeg',
                 type: { id: 3, name: 'front cover' },
               },
               performerInfo: 'Inlustris',
@@ -114,7 +114,7 @@ describe('e2e - album', () => {
               image: {
                 description: undefined,
                 imageBuffer,
-                mime: 'jpeg',
+                mime: 'image/jpeg',
                 type: { id: 3, name: 'front cover' },
               },
               performerInfo: 'Inlustris',
@@ -132,7 +132,7 @@ describe('e2e - album', () => {
               image: {
                 description: undefined,
                 imageBuffer,
-                mime: 'jpeg',
+                mime: 'image/jpeg',
                 type: { id: 3, name: 'front cover' },
               },
               performerInfo: 'Inlustris',
@@ -150,7 +150,7 @@ describe('e2e - album', () => {
               image: {
                 description: undefined,
                 imageBuffer,
-                mime: 'jpeg',
+                mime: 'image/jpeg',
                 type: { id: 3, name: 'front cover' },
               },
               performerInfo: 'Inlustris',
@@ -168,7 +168,7 @@ describe('e2e - album', () => {
               image: {
                 description: undefined,
                 imageBuffer,
-                mime: 'jpeg',
+                mime: 'image/jpeg',
                 type: { id: 3, name: 'front cover' },
               },
               performerInfo: 'Inlustris',
