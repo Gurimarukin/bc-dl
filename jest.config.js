@@ -1,4 +1,7 @@
-module.exports = {
-  preset: 'ts-jest',
-  roots: ['<rootDir>/test/'],
+/** @type {import('ts-jest').JestConfigWithTsJest} **/
+export default {
+  testEnvironment: 'node',
+  transform: {
+    '^.+\.ts$': ['ts-jest', {}],
+  },
 }

@@ -1,3 +1,5 @@
-*
+album/*
+track/*
 
-!.gitignore
+!album/.gitkeep
+!track/.gitkeep

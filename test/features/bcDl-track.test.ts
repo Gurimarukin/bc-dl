@@ -19,7 +19,6 @@ const imageBuffer = Buffer.from('Track Image Buffer', 'utf-8')
 
 describe('e2e - tracks', () => {
   beforeEach(() => pipe(cleanMusicDir(musicDir), Future.runUnsafe))
-  afterEach(() => pipe(cleanMusicDir(musicDir), Future.runUnsafe))
 
   it('should e2e', () =>
     pipe(
@@ -34,12 +33,12 @@ describe('e2e - tracks', () => {
         execYoutubeDlMocked,
       ),
       Future.chain(() => {
-        const albumDir = pipe(
+        const trackDir = pipe(
           musicDir,
           Dir.joinDir('Snakes Of Russia', '[2019] Welcome To Speed Castle (Track)'),
         )
         return pipe(
-          FsUtils.readdir(albumDir),
+          FsUtils.readdir(trackDir),
           Future.chain(
             flow(
               List.map(f => {

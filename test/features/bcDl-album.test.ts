@@ -19,7 +19,6 @@ const imageBuffer = Buffer.from('Album Image Buffer', 'utf-8')
 
 describe('e2e - album', () => {
   beforeEach(() => pipe(cleanMusicDir(musicDir), Future.runUnsafe))
-  afterEach(() => pipe(cleanMusicDir(musicDir), Future.runUnsafe))
 
   it('should e2e', () =>
     pipe(

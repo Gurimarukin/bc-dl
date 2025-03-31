@@ -39,4 +39,4 @@ jobs:
       # - run: yarn dc
 
       # test
-      - run: yarn jestCoverage
+      - run: yarn jestUnit

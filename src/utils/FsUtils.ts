@@ -1,6 +1,5 @@
 import { pipe } from 'fp-ts/function'
 import fs from 'fs'
-import rimraf from 'rimraf'
 
 import { Dir, File, FileOrDir } from '../models/FileOrDir'
 import { Future, IO, List, Maybe } from './fp'
@@ -49,19 +48,6 @@ export namespace FsUtils {
     return Future.tryCatch(() => fs.promises.rename(oldF.path, newF.path))
   }
 
-  export const rmrf = (f: FileOrDir, options: rimraf.Options = {}): Future<void> =>
-    Future.tryCatch(
-      () =>
-        /* eslint-disable functional/no-return-void */
-        // eslint-disable-next-line functional/no-promise-reject
-        new Promise<void>((resolve, reject) =>
-          rimraf(f.path, options, (error: Error | null) =>
-            error === null ? resolve() : reject(error),
-          ),
-        ),
-      /* eslint-enable functional/no-return-void */
-    )
-
-  export const rmdir = (dir: Dir, options?: fs.RmDirOptions): Future<void> =>
-    Future.tryCatch(() => fs.promises.rmdir(dir.path, options))
+  export const rmrf = (dir: Dir): Future<void> =>
+    Future.tryCatch(() => fs.promises.rm(dir.path, { recursive: true, force: true }))
 }

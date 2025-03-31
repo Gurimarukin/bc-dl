@@ -1,7 +1,7 @@
 /* eslint-disable functional/no-return-void */
 import { AxiosResponse } from 'axios'
 import { List } from 'decline-ts/lib/utils/fp'
-import { flow, pipe } from 'fp-ts/function'
+import { pipe } from 'fp-ts/function'
 
 import { ExecYoutubeDl, HttpGet, HttpGetBuffer } from '../../src/features/common'
 import { Dir, FileOrDir } from '../../src/models/FileOrDir'
@@ -13,9 +13,8 @@ export const cleanMusicDir = (musicDir: Dir): Future<void> =>
   pipe(
     FsUtils.readdir(musicDir),
     Future.chain(
-      flow(
-        List.map(f => (FileOrDir.isDir(f) ? FsUtils.rmdir(f, { recursive: true }) : Future.unit)),
-        Future.sequenceArray,
+      List.traverse(Future.ApplicativeSeq)(f =>
+        FileOrDir.isDir(f) ? FsUtils.rmrf(f) : Future.unit,
       ),
     ),
     Future.map(() => {}),

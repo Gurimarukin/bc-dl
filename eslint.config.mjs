@@ -6,7 +6,7 @@ import functional from 'eslint-plugin-functional'
 import tseslint from 'typescript-eslint'
 
 export default tseslint.config(
-  { ignores: ['.pnp.*'] },
+  { ignores: ['coverage/'] },
   {
     extends: [
       jseslint.configs.recommended,
@@ -30,6 +30,7 @@ export default tseslint.config(
       ...fpTs.configs.all.rules,
 
       // js
+      'arrow-body-style': ['warn', 'as-needed'],
       'no-console': 'off',
       'no-empty-function': 'off',
       'no-inner-declarations': 'off',
