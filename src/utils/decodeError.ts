@@ -1,6 +1,6 @@
-import * as D from "io-ts/Decoder";
+import * as D from 'io-ts/Decoder'
 
-import { StringUtils } from "./StringUtils";
+import { StringUtils } from './StringUtils'
 
 export const decodeError =
   (name: string) =>
@@ -14,4 +14,4 @@ export const decodeError =
       |
       |Value: ${JSON.stringify(value)}`,
       ),
-    );
+    )
