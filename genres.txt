@@ -1,6 +1,7 @@
 Ambient
 Black Metal
 Chiptune
+Darkwave
 Death Metal
 Deathcore
 Dungeon Synth
@@ -15,3 +16,4 @@ Power Metal
 Progressive Metal
 Soundtrack
 Stoner
+Synthwave
