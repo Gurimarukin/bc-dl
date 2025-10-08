@@ -34,7 +34,7 @@ import {
 } from './common'
 
 const cmd = CmdArgs.of(
-  'tag-files',
+  'tag',
   'Tag and organize already downloaded files (at the root of music directory',
 )
 
