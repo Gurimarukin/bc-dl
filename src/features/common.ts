@@ -65,9 +65,9 @@ export const parseCommand = (cmd: CmdArgs, argv: List<string>): Future<Args> =>
         ? Future.fromIOEither(pipe(cwd, Dir.resolveDir(args.musicLibraryDir)))
         : Future.left(
             Error(
-              `Unknown genre "${Genre.unwrap(args.genre)}" (add it to file ${
+              `Unknown genre ${JSON.stringify(Genre.unwrap(args.genre))} (add it to file ${
                 config.genresTxt.path
-              })`,
+              })\nKnown genres: ${genres.join(', ')}`,
             ),
           ),
     ),
